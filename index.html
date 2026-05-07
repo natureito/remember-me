@@ -19,38 +19,34 @@
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background 0.2s,color 0.2s}
 .container{max-width:760px;margin:0 auto;padding:0 1.25rem}
-
 .site-header{padding:2rem 0 1.5rem;text-align:center;border-bottom:0.5px solid var(--border);position:relative}
 .site-title{font-size:32px;font-weight:500;letter-spacing:0.08em}
 .site-sub{font-size:13px;color:var(--text2);margin-top:8px;line-height:1.6}
 .theme-btn{position:absolute;top:50%;right:0;transform:translateY(-50%);background:none;border:0.5px solid var(--border2);border-radius:var(--radius);padding:6px 14px;font-size:12px;color:var(--text2);cursor:pointer}
 .theme-btn:hover{background:var(--bg2)}
-
 .decade-tabs{display:flex;gap:6px;padding:1.25rem 0 0;overflow-x:auto;scrollbar-width:none}
 .decade-tabs::-webkit-scrollbar{display:none}
 .tab{flex-shrink:0;padding:6px 16px;border-radius:var(--radius);border:0.5px solid var(--border);font-size:13px;color:var(--text2);cursor:pointer;background:transparent;transition:all 0.15s}
 .tab:hover{background:var(--bg2)}
 .tab.active{background:var(--text);color:var(--bg);border-color:var(--text)}
 .tab-count{font-size:11px;opacity:0.6;margin-left:4px}
-
 .section-header{display:flex;align-items:center;justify-content:space-between;padding:1.5rem 0 0.75rem}
 .section-title{font-size:20px;font-weight:500}
 .section-count{font-size:13px;font-weight:400;color:var(--text3);margin-left:8px}
 .add-btn{padding:7px 16px;border-radius:var(--radius);border:0.5px solid var(--border2);font-size:13px;color:var(--text);cursor:pointer;background:transparent}
 .add-btn:hover{background:var(--bg2)}
-
 .form-panel{background:var(--bg2);border-radius:var(--radius-lg);border:0.5px solid var(--border);padding:1.25rem;margin-bottom:1rem;display:none}
 .form-panel.open{display:block}
+.form-title{font-size:14px;font-weight:500;margin-bottom:12px}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
 .form-full{grid-column:1/-1}
 .form-label{font-size:12px;color:var(--text2);margin-bottom:4px;display:block}
-input,textarea{width:100%;border:0.5px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-size:13px;background:var(--bg);color:var(--text);font-family:inherit}
-input:focus,textarea:focus{outline:none;border-color:var(--border2)}
+input,textarea,select{width:100%;border:0.5px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-size:13px;background:var(--bg);color:var(--text);font-family:inherit}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--border2)}
 textarea{resize:vertical;min-height:64px}
 .form-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
 .btn-save{padding:7px 20px;border-radius:var(--radius);background:var(--text);color:var(--bg);border:none;font-size:13px;cursor:pointer}
 .btn-cancel{padding:7px 16px;border-radius:var(--radius);background:transparent;color:var(--text2);border:0.5px solid var(--border);font-size:13px;cursor:pointer}
-
 .song-list{display:flex;flex-direction:column;gap:8px;padding-bottom:3rem}
 .song-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;display:flex;gap:12px;align-items:flex-start;cursor:grab;user-select:none}
 .song-card:active{cursor:grabbing}
@@ -61,35 +57,29 @@ textarea{resize:vertical;min-height:64px}
 .song-thumb{width:72px;height:54px;border-radius:6px;object-fit:cover;flex-shrink:0;background:var(--bg3)}
 .song-info{flex:1;min-width:0}
 .song-title{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.song-artist{font-size:12px;color:var(--text2);margin-top:2px}
+.song-meta{display:flex;gap:8px;align-items:center;margin-top:3px;flex-wrap:wrap}
+.song-artist{font-size:12px;color:var(--text2)}
+.song-year{font-size:11px;color:var(--text3);background:var(--bg3);padding:1px 6px;border-radius:4px;flex-shrink:0}
 .song-comment{font-size:12px;color:var(--text3);margin-top:5px;line-height:1.6;white-space:pre-wrap}
 .song-actions{display:flex;gap:4px;flex-shrink:0}
 .icon-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;padding:5px 7px;border-radius:6px}
 .icon-btn:hover{color:var(--text);background:var(--bg2)}
-
 .empty-state{text-align:center;padding:4rem 1rem;color:var(--text3);font-size:14px;line-height:2}
-
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);display:none;align-items:center;justify-content:center;z-index:200}
 .modal-overlay.open{display:flex}
 .modal-inner{background:#000;border-radius:var(--radius-lg);overflow:hidden;width:min(640px,92vw);aspect-ratio:16/9;position:relative}
 .modal-close{position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:50%;width:30px;height:30px;font-size:16px;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center}
 .modal-close:hover{background:rgba(0,0,0,0.9)}
-
-@media(max-width:480px){
-  .form-grid{grid-template-columns:1fr}
-  .song-thumb{width:56px;height:42px}
-}
+@media(max-width:480px){.form-grid{grid-template-columns:1fr}.song-thumb{width:56px;height:42px}}
 </style>
 </head>
 <body>
-
 <div class="container">
   <header class="site-header">
     <div class="site-title">REMEMBER ME</div>
     <div class="site-sub">あなたが聴いてきた音楽は、あなたの歴史です</div>
     <button class="theme-btn" id="themeBtn">🌙 ダーク</button>
   </header>
-
   <div class="decade-tabs" id="tabs"></div>
   <div id="mainContent"></div>
 </div>
@@ -105,152 +95,172 @@ textarea{resize:vertical;min-height:64px}
 <script>
 const DECADES = ['1960s','1970s','1980s','1990s','2000s','2010s','2020s'];
 const KEY = 'rememberme_v2';
-
 let active = '1980s';
 let formOpen = false;
+let editIdx = null;
 let dark = false;
 let data = {};
 DECADES.forEach(d => data[d] = []);
 
-// load
 try {
   const s = JSON.parse(localStorage.getItem(KEY) || '{}');
   DECADES.forEach(d => { if(s[d]) data[d] = s[d]; });
-  if(s._dark) { dark = true; document.documentElement.setAttribute('data-theme','dark'); }
+  if(s._dark){ dark = true; document.documentElement.setAttribute('data-theme','dark'); }
 } catch(e){}
 
-function persist() {
-  try { localStorage.setItem(KEY, JSON.stringify({...data, _dark: dark})); } catch(e){}
-}
+function persist(){ try{ localStorage.setItem(KEY, JSON.stringify({...data, _dark:dark})); }catch(e){} }
 
-function ytId(url) {
+function ytId(url){
   const m = (url||'').match(/(?:youtu\.be\/|[?&]v=|embed\/)([A-Za-z0-9_-]{11})/);
   return m ? m[1] : null;
 }
 
-function esc(s) {
-  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function decadeOptions(sel){
+  return DECADES.map(d=>`<option value="${d}"${d===sel?' selected':''}>${d}</option>`).join('');
 }
 
-function renderTabs() {
-  document.getElementById('tabs').innerHTML = DECADES.map(d =>
+function renderTabs(){
+  document.getElementById('tabs').innerHTML = DECADES.map(d=>
     `<button class="tab${d===active?' active':''}" onclick="setDec('${d}')">${d}<span class="tab-count">${data[d].length||''}</span></button>`
   ).join('');
 }
 
-function renderMain() {
+function renderMain(){
   const songs = data[active];
   const canAdd = songs.length < 100;
+  const isEdit = editIdx !== null;
+  const ed = isEdit ? songs[editIdx] : null;
 
   const formHtml = `
   <div class="form-panel${formOpen?' open':''}" id="addForm">
+    <div class="form-title">${isEdit?'曲を編集':'曲を追加'}</div>
     <div class="form-grid">
-      <div class="form-full"><label class="form-label">YouTube URL *</label><input id="fUrl" placeholder="https://www.youtube.com/watch?v=..." /></div>
-      <div><label class="form-label">アーティスト名 *</label><input id="fArtist" placeholder="The Beatles" /></div>
-      <div><label class="form-label">曲名 *</label><input id="fTitle" placeholder="Hey Jude" /></div>
-      <div class="form-full"><label class="form-label">コメント（任意）</label><textarea id="fComment" placeholder="大学時代、よく聴いてた..."></textarea></div>
+      <div class="form-full"><label class="form-label">YouTube URL *</label><input id="fUrl" placeholder="https://www.youtube.com/watch?v=..." value="${isEdit?esc(ed.url):''}" /></div>
+      <div><label class="form-label">アーティスト名 *</label><input id="fArtist" placeholder="Redbone" value="${isEdit?esc(ed.artist):''}" /></div>
+      <div><label class="form-label">曲名 *</label><input id="fTitle" placeholder="Come And Get Your Love" value="${isEdit?esc(ed.title):''}" /></div>
+      <div><label class="form-label">年代 *</label><select id="fDecade">${decadeOptions(isEdit?(ed.decade||active):active)}</select></div>
+      <div><label class="form-label">リリース年（任意）</label><input id="fYear" placeholder="1974" maxlength="4" value="${isEdit&&ed.year?ed.year:''}" /></div>
+      <div class="form-full"><label class="form-label">コメント（任意）</label><textarea id="fComment" placeholder="Guardians of the Galaxyを観てちゃんと聞いた...">${isEdit?esc(ed.comment):''}</textarea></div>
     </div>
     <div class="form-actions">
       <button class="btn-cancel" onclick="cancelForm()">キャンセル</button>
-      <button class="btn-save" onclick="saveSong()">追加する</button>
+      <button class="btn-save" onclick="saveSong()">${isEdit?'更新する':'追加する'}</button>
     </div>
   </div>`;
 
-  const listHtml = songs.length === 0
+  const listHtml = songs.length===0
     ? `<div class="empty-state">まだ曲が登録されていません<br>「+ 曲を追加」から始めましょう</div>`
     : `<div class="song-list" id="songList">${songs.map(songCard).join('')}</div>`;
 
   document.getElementById('mainContent').innerHTML = `
   <div class="section-header">
     <div class="section-title">${active}<span class="section-count">${songs.length} / 100</span></div>
-    ${canAdd ? `<button class="add-btn" onclick="toggleForm()">+ 曲を追加</button>` : '<span style="font-size:13px;color:var(--text3)">100曲達成！</span>'}
+    ${canAdd?`<button class="add-btn" onclick="openAdd()">+ 曲を追加</button>`:'<span style="font-size:13px;color:var(--text3)">100曲達成！</span>'}
   </div>
   ${formHtml}${listHtml}`;
 
   initDrag();
 }
 
-function songCard(s, i) {
+function songCard(s,i){
   const id = ytId(s.url);
   return `
   <div class="song-card" draggable="true" data-idx="${i}">
     <div class="drag-handle">⠿</div>
     <div class="rank">${i+1}</div>
-    ${id ? `<img class="song-thumb" src="https://img.youtube.com/vi/${id}/mqdefault.jpg" alt="" onerror="this.style.display='none'">` : ''}
+    ${id?`<img class="song-thumb" src="https://img.youtube.com/vi/${id}/mqdefault.jpg" alt="" onerror="this.style.display='none'">` : ''}
     <div class="song-info">
       <div class="song-title">${esc(s.title)}</div>
-      <div class="song-artist">${esc(s.artist)}</div>
-      ${s.comment ? `<div class="song-comment">${esc(s.comment)}</div>` : ''}
+      <div class="song-meta">
+        <span class="song-artist">${esc(s.artist)}</span>
+        ${s.year?`<span class="song-year">${esc(s.year)}</span>`:''}
+      </div>
+      ${s.comment?`<div class="song-comment">${esc(s.comment)}</div>`:''}
     </div>
     <div class="song-actions">
-      ${id ? `<button class="icon-btn" onclick="play('${id}')" title="再生">▶</button>` : ''}
+      ${id?`<button class="icon-btn" onclick="play('${id}')" title="再生">▶</button>`:''}
+      <button class="icon-btn" onclick="editSong(${i})" title="編集">✎</button>
       <button class="icon-btn" onclick="del(${i})" title="削除">✕</button>
     </div>
   </div>`;
 }
 
-function setDec(d) { active = d; formOpen = false; renderTabs(); renderMain(); }
-function toggleForm() { formOpen = !formOpen; renderMain(); }
-function cancelForm() { formOpen = false; renderMain(); }
+function setDec(d){ active=d; formOpen=false; editIdx=null; renderTabs(); renderMain(); }
+function openAdd(){ formOpen=true; editIdx=null; renderMain(); }
+function cancelForm(){ formOpen=false; editIdx=null; renderMain(); }
 
-function saveSong() {
+function editSong(i){
+  editIdx=i; formOpen=true; renderMain();
+  document.getElementById('addForm').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function saveSong(){
   const url = document.getElementById('fUrl').value.trim();
   const artist = document.getElementById('fArtist').value.trim();
   const title = document.getElementById('fTitle').value.trim();
+  const decade = document.getElementById('fDecade').value;
+  const year = document.getElementById('fYear').value.trim();
   const comment = document.getElementById('fComment').value.trim();
-  if (!url || !artist || !title) { alert('URL、アーティスト名、曲名は必須です'); return; }
-  data[active].push({ url, artist, title, comment });
-  persist(); formOpen = false; renderTabs(); renderMain();
+  if(!url||!artist||!title){ alert('URL、アーティスト名、曲名は必須です'); return; }
+  const song = {url, artist, title, decade, year, comment};
+  if(editIdx!==null){
+    if(decade !== active){
+      data[active].splice(editIdx,1);
+      data[decade].push(song);
+    } else {
+      data[active][editIdx]=song;
+    }
+  } else {
+    data[decade].push(song);
+  }
+  persist(); formOpen=false; editIdx=null;
+  active=decade;
+  renderTabs(); renderMain();
 }
 
-function del(i) {
-  if (!confirm('この曲を削除しますか？')) return;
-  data[active].splice(i, 1);
+function del(i){
+  if(!confirm('この曲を削除しますか？')) return;
+  data[active].splice(i,1);
   persist(); renderTabs(); renderMain();
 }
 
-function play(id) {
-  document.getElementById('videoFrame').src = `https://www.youtube.com/embed/${id}?autoplay=1`;
+function play(id){
+  document.getElementById('videoFrame').src=`https://www.youtube.com/embed/${id}?autoplay=1`;
   document.getElementById('modal').classList.add('open');
 }
 
-document.getElementById('modalClose').onclick = function() {
+document.getElementById('modalClose').onclick=function(){
   document.getElementById('modal').classList.remove('open');
-  document.getElementById('videoFrame').src = '';
+  document.getElementById('videoFrame').src='';
 };
-
-document.getElementById('modal').onclick = function(e) {
-  if (e.target === this) { this.classList.remove('open'); document.getElementById('videoFrame').src = ''; }
+document.getElementById('modal').onclick=function(e){
+  if(e.target===this){ this.classList.remove('open'); document.getElementById('videoFrame').src=''; }
 };
-
-document.getElementById('themeBtn').onclick = function() {
-  dark = !dark;
-  document.documentElement.setAttribute('data-theme', dark ? 'dark' : '');
-  this.textContent = dark ? '☀️ ライト' : '🌙 ダーク';
+document.getElementById('themeBtn').onclick=function(){
+  dark=!dark;
+  document.documentElement.setAttribute('data-theme',dark?'dark':'');
+  this.textContent=dark?'☀️ ライト':'🌙 ダーク';
   persist();
 };
-if (dark) document.getElementById('themeBtn').textContent = '☀️ ライト';
+if(dark) document.getElementById('themeBtn').textContent='☀️ ライト';
 
-let dragSrc = null;
-function initDrag() {
-  const list = document.getElementById('songList');
-  if (!list) return;
-  list.querySelectorAll('.song-card').forEach(card => {
-    card.addEventListener('dragstart', e => {
-      dragSrc = +card.dataset.idx;
-      setTimeout(() => card.classList.add('dragging'), 0);
-      e.dataTransfer.effectAllowed = 'move';
-    });
-    card.addEventListener('dragend', () => card.classList.remove('dragging'));
-    card.addEventListener('dragover', e => { e.preventDefault(); card.classList.add('drag-over'); });
-    card.addEventListener('dragleave', () => card.classList.remove('drag-over'));
-    card.addEventListener('drop', e => {
-      e.preventDefault();
-      card.classList.remove('drag-over');
-      const target = +card.dataset.idx;
-      if (dragSrc === null || dragSrc === target) return;
-      const [m] = data[active].splice(dragSrc, 1);
-      data[active].splice(target, 0, m);
+let dragSrc=null;
+function initDrag(){
+  const list=document.getElementById('songList');
+  if(!list) return;
+  list.querySelectorAll('.song-card').forEach(card=>{
+    card.addEventListener('dragstart',e=>{ dragSrc=+card.dataset.idx; setTimeout(()=>card.classList.add('dragging'),0); e.dataTransfer.effectAllowed='move'; });
+    card.addEventListener('dragend',()=>card.classList.remove('dragging'));
+    card.addEventListener('dragover',e=>{ e.preventDefault(); card.classList.add('drag-over'); });
+    card.addEventListener('dragleave',()=>card.classList.remove('drag-over'));
+    card.addEventListener('drop',e=>{
+      e.preventDefault(); card.classList.remove('drag-over');
+      const target=+card.dataset.idx;
+      if(dragSrc===null||dragSrc===target) return;
+      const [m]=data[active].splice(dragSrc,1);
+      data[active].splice(target,0,m);
       persist(); renderMain();
     });
   });
