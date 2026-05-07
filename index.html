@@ -95,7 +95,7 @@ textarea{resize:vertical;min-height:64px}
 </div>
 
 <script>
-const DECADES = ['1960s','1970s','1980s','1990s','2000s','2010s','2020s'];
+const DECADES = ['1950s','1960s','1970s','1980s','1990s','2000s','2010s','2020s'];
 const KEY = 'rememberme_v2';
 let active = '1980s';
 let formOpen = false;
@@ -139,10 +139,10 @@ function renderMain(){
   <div class="form-panel${formOpen?' open':''}" id="addForm">
     <div class="form-title">${isEdit?'曲を編集':'曲を追加'}</div>
     <div class="form-grid">
-      <div><label class="form-label">アーティスト名 *</label><input id="fArtist" placeholder="Redbone" value="${isEdit?esc(ed.artist):''}" /></div>
-      <div><label class="form-label">曲名 *</label><input id="fTitle" placeholder="Come And Get Your Love" value="${isEdit?esc(ed.title):''}" /></div>
+      <div><label class="form-label">アーティスト名 *</label><input id="fArtist" placeholder="Elvis Presley" value="${isEdit?esc(ed.artist):''}" /></div>
+      <div><label class="form-label">曲名 *</label><input id="fTitle" placeholder="Hound Dog" value="${isEdit?esc(ed.title):''}" /></div>
       <div><label class="form-label">年代 *</label><select id="fDecade">${decadeOptions(isEdit?(ed.decade||active):active)}</select></div>
-      <div><label class="form-label">リリース年<span class="form-optional">任意</span></label><input id="fYear" placeholder="1974" maxlength="4" value="${isEdit&&ed.year?ed.year:''}" /></div>
+      <div><label class="form-label">リリース年<span class="form-optional">任意</span></label><input id="fYear" placeholder="1956" maxlength="4" value="${isEdit&&ed.year?ed.year:''}" /></div>
       <div class="form-full"><label class="form-label">YouTube URL<span class="form-optional">任意</span></label><input id="fUrl" placeholder="https://www.youtube.com/watch?v=..." value="${isEdit?esc(ed.url||''):''}" /></div>
       <div class="form-full"><label class="form-label">コメント<span class="form-optional">任意</span></label><textarea id="fComment" placeholder="どんな時に聴いてた？どこで知った？...">${isEdit?esc(ed.comment):''}</textarea></div>
     </div>
