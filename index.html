@@ -22,8 +22,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .site-header{padding:2rem 0 1.5rem;text-align:center;border-bottom:0.5px solid var(--border);position:relative}
 .site-title{font-size:32px;font-weight:500;letter-spacing:0.08em}
 .site-sub{font-size:13px;color:var(--text2);margin-top:8px;line-height:1.6}
-.theme-btn{position:absolute;top:50%;right:0;transform:translateY(-50%);background:none;border:0.5px solid var(--border2);border-radius:var(--radius);padding:6px 14px;font-size:12px;color:var(--text2);cursor:pointer}
-.theme-btn:hover{background:var(--bg2)}
+.header-actions{position:absolute;top:50%;right:0;transform:translateY(-50%);display:flex;gap:6px;align-items:center}
+.theme-btn,.tool-btn{background:none;border:0.5px solid var(--border2);border-radius:var(--radius);padding:6px 12px;font-size:12px;color:var(--text2);cursor:pointer}
+.theme-btn:hover,.tool-btn:hover{background:var(--bg2)}
 .decade-tabs{display:flex;gap:6px;padding:1.25rem 0 0;overflow-x:auto;scrollbar-width:none}
 .decade-tabs::-webkit-scrollbar{display:none}
 .tab{flex-shrink:0;padding:6px 16px;border-radius:var(--radius);border:0.5px solid var(--border);font-size:13px;color:var(--text2);cursor:pointer;background:transparent;transition:all 0.15s}
@@ -72,6 +73,15 @@ textarea{resize:vertical;min-height:64px}
 .modal-inner{background:#000;border-radius:var(--radius-lg);overflow:hidden;width:min(640px,92vw);aspect-ratio:16/9;position:relative}
 .modal-close{position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:50%;width:30px;height:30px;font-size:16px;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center}
 .modal-close:hover{background:rgba(0,0,0,0.9)}
+.tools-panel{background:var(--bg2);border-radius:var(--radius-lg);border:0.5px solid var(--border);padding:1.25rem;margin:1rem 0;display:none}
+.tools-panel.open{display:block}
+.tools-title{font-size:14px;font-weight:500;margin-bottom:12px}
+.tools-row{display:flex;gap:8px;flex-wrap:wrap}
+.tool-action-btn{padding:8px 16px;border-radius:var(--radius);border:0.5px solid var(--border2);font-size:13px;color:var(--text);cursor:pointer;background:var(--bg)}
+.tool-action-btn:hover{background:var(--bg3)}
+.tool-action-btn.danger{color:#e05555;border-color:rgba(224,85,85,0.3)}
+.tool-note{font-size:12px;color:var(--text3);margin-top:10px;line-height:1.6}
+@media(max-width:560px){.header-actions{position:static;transform:none;display:flex;justify-content:center;margin-top:10px}.site-header{padding-bottom:1rem}}
 @media(max-width:480px){.form-grid{grid-template-columns:1fr}.song-thumb,.song-thumb-placeholder{width:56px;height:42px}}
 </style>
 </head>
@@ -80,8 +90,25 @@ textarea{resize:vertical;min-height:64px}
   <header class="site-header">
     <div class="site-title">REMEMBER ME</div>
     <div class="site-sub">あなたが聴いてきた音楽は、あなたの歴史です</div>
-    <button class="theme-btn" id="themeBtn">🌙 ダーク</button>
+    <div class="header-actions">
+      <button class="tool-btn" onclick="toggleTools()">⚙ ツール</button>
+      <button class="theme-btn" id="themeBtn">🌙 ダーク</button>
+    </div>
   </header>
+
+  <div class="tools-panel" id="toolsPanel">
+    <div class="tools-title">データ管理</div>
+    <div class="tools-row">
+      <button class="tool-action-btn" onclick="exportData()">📥 JSONエクスポート</button>
+      <button class="tool-action-btn" onclick="document.getElementById('importFile').click()">📤 JSONインポート</button>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+    </div>
+    <div class="tool-note">
+      エクスポート：全曲データをJSONファイルとして保存します。バックアップや別デバイスへの移行に使えます。<br>
+      インポート：エクスポートしたJSONファイルを読み込みます。既存のデータに追加されます。
+    </div>
+  </div>
+
   <div class="decade-tabs" id="tabs"></div>
   <div id="mainContent"></div>
 </div>
@@ -101,6 +128,7 @@ let active = '1980s';
 let formOpen = false;
 let editIdx = null;
 let dark = false;
+let toolsOpen = false;
 let data = {};
 DECADES.forEach(d => data[d] = []);
 
@@ -121,6 +149,59 @@ function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').repla
 
 function decadeOptions(sel){
   return DECADES.map(d=>`<option value="${d}"${d===sel?' selected':''}>${d}</option>`).join('');
+}
+
+// エクスポート
+function exportData(){
+  const exportObj = {};
+  DECADES.forEach(d => { if(data[d] && data[d].length > 0) exportObj[d] = data[d]; });
+  const total = DECADES.reduce((n,d)=>n+(data[d]||[]).length,0);
+  if(total === 0){ alert('エクスポートするデータがありません'); return; }
+  const blob = new Blob([JSON.stringify(exportObj, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `remember-me-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// インポート
+function importData(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    try {
+      const imported = JSON.parse(ev.target.result);
+      let count = 0;
+      DECADES.forEach(d => {
+        if(imported[d] && Array.isArray(imported[d])){
+          imported[d].forEach(song => {
+            if(song.artist && song.title){
+              if(!data[d]) data[d] = [];
+              // 重複チェック（同じアーティスト+曲名は追加しない）
+              const exists = data[d].some(s => s.artist===song.artist && s.title===song.title);
+              if(!exists){ data[d].push(song); count++; }
+            }
+          });
+        }
+      });
+      persist();
+      renderTabs();
+      renderMain();
+      alert(`${count}曲をインポートしました`);
+    } catch(err){
+      alert('JSONファイルの読み込みに失敗しました');
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function toggleTools(){
+  toolsOpen = !toolsOpen;
+  document.getElementById('toolsPanel').classList.toggle('open', toolsOpen);
 }
 
 function renderTabs(){
