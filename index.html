@@ -18,7 +18,7 @@
   --text:#f0f0f0;--text2:#aaa;--text3:#666;
   --border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.2);
 }
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background 0.2s,color 0.2s}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background 0.2s,color 0.2s;padding-bottom:100px}
 .container{max-width:760px;margin:0 auto;padding:0 1.25rem}
 .site-header{padding:2rem 0 1.5rem;text-align:center;border-bottom:0.5px solid var(--border);position:relative}
 .site-title{font-size:32px;font-weight:500;letter-spacing:0.08em}
@@ -35,8 +35,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .section-header{display:flex;align-items:center;justify-content:space-between;padding:1.5rem 0 0.75rem}
 .section-title{font-size:20px;font-weight:500}
 .section-count{font-size:13px;font-weight:400;color:var(--text3);margin-left:8px}
+.section-actions{display:flex;gap:6px;align-items:center}
 .add-btn{padding:7px 16px;border-radius:var(--radius);border:0.5px solid var(--border2);font-size:13px;color:var(--text);cursor:pointer;background:transparent}
 .add-btn:hover{background:var(--bg2)}
+.play-menu-btn{padding:7px 12px;border-radius:var(--radius);border:0.5px solid var(--border2);font-size:13px;color:var(--text2);cursor:pointer;background:transparent;position:relative}
+.play-menu-btn:hover{background:var(--bg2)}
+.play-dropdown{position:absolute;top:calc(100% + 4px);right:0;background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:6px;min-width:180px;z-index:50;display:none;box-shadow:0 4px 20px rgba(0,0,0,0.15)}
+.play-dropdown.open{display:block}
+.play-option{display:block;width:100%;text-align:left;padding:8px 12px;border:none;background:none;font-size:13px;color:var(--text);cursor:pointer;border-radius:var(--radius)}
+.play-option:hover{background:var(--bg2)}
 .form-panel{background:var(--bg2);border-radius:var(--radius-lg);border:0.5px solid var(--border);padding:1.25rem;margin-bottom:1rem;display:none}
 .form-panel.open{display:block}
 .form-title{font-size:14px;font-weight:500;margin-bottom:12px}
@@ -50,9 +57,10 @@ textarea{resize:vertical;min-height:64px}
 .form-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
 .btn-save{padding:7px 20px;border-radius:var(--radius);background:var(--text);color:var(--bg);border:none;font-size:13px;cursor:pointer}
 .btn-cancel{padding:7px 16px;border-radius:var(--radius);background:transparent;color:var(--text2);border:0.5px solid var(--border);font-size:13px;cursor:pointer}
-.song-list{display:flex;flex-direction:column;gap:8px;padding-bottom:3rem}
+.song-list{display:flex;flex-direction:column;gap:8px;padding-bottom:1rem}
 .song-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;display:flex;gap:12px;align-items:flex-start;user-select:none}
-.song-card.dragging{opacity:0.35;cursor:grabbing}
+.song-card.playing{border-color:#4ade80;background:var(--bg2)}
+.song-card.dragging{opacity:0.35}
 .song-card.drag-over{border-color:var(--text2);background:var(--bg2)}
 .drag-handle{color:var(--text3);font-size:16px;padding-top:3px;flex-shrink:0;cursor:grab}
 .rank{font-size:13px;font-weight:500;color:var(--text3);min-width:22px;padding-top:3px;text-align:right;flex-shrink:0}
@@ -63,34 +71,41 @@ textarea{resize:vertical;min-height:64px}
 .song-meta{display:flex;gap:8px;align-items:center;margin-top:3px;flex-wrap:wrap}
 .song-artist{font-size:12px;color:var(--text2)}
 .song-year{font-size:11px;color:var(--text3);background:var(--bg3);padding:1px 6px;border-radius:4px;flex-shrink:0}
-
-/* コメント表示（PC） */
-.song-comment{font-size:12px;color:var(--text3);margin-top:5px;line-height:1.6;white-space:pre-wrap;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
-.song-comment.expanded{display:block;-webkit-line-clamp:unset;}
+.song-comment{font-size:12px;color:var(--text3);margin-top:5px;line-height:1.6;white-space:pre-wrap;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.song-comment.expanded{display:block;-webkit-line-clamp:unset}
 .comment-toggle{background:none;border:none;font-size:11px;color:var(--text3);cursor:pointer;padding:2px 0;margin-top:2px;display:block}
 .comment-toggle:hover{color:var(--text2)}
-
-/* スマホではコメント非表示 */
 @media(max-width:600px){
   .song-comment{display:none}
   .song-comment.expanded{display:block}
-  .comment-toggle{display:block}
   .song-thumb,.song-thumb-placeholder{width:56px;height:42px}
   .form-grid{grid-template-columns:1fr}
   .header-actions{position:static;transform:none;display:flex;justify-content:center;margin-top:10px}
   .site-header{padding-bottom:1rem}
 }
-
 .song-actions{display:flex;gap:4px;flex-shrink:0}
 .icon-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;padding:5px 7px;border-radius:6px}
 .icon-btn:hover{color:var(--text);background:var(--bg2)}
+.icon-btn.play-active{color:#4ade80}
 .empty-state{text-align:center;padding:4rem 1rem;color:var(--text3);font-size:14px;line-height:2}
 .loading{text-align:center;padding:3rem;color:var(--text3);font-size:14px}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);display:none;align-items:center;justify-content:center;z-index:200}
-.modal-overlay.open{display:flex}
-.modal-inner{background:#000;border-radius:var(--radius-lg);overflow:hidden;width:min(640px,92vw);aspect-ratio:16/9;position:relative}
-.modal-close{position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:50%;width:30px;height:30px;font-size:16px;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center}
-.modal-close:hover{background:rgba(0,0,0,0.9)}
+
+/* ミニプレイヤー */
+.mini-player{position:fixed;bottom:16px;right:16px;width:320px;background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--radius-lg);box-shadow:0 8px 32px rgba(0,0,0,0.2);z-index:100;display:none;overflow:hidden}
+.mini-player.open{display:block}
+.mini-player-header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:0.5px solid var(--border)}
+.mini-player-info{flex:1;min-width:0}
+.mini-player-title{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini-player-artist{font-size:11px;color:var(--text2);margin-top:1px}
+.mini-player-controls{display:flex;gap:4px;align-items:center;flex-shrink:0;margin-left:8px}
+.mp-btn{background:none;border:none;cursor:pointer;color:var(--text2);font-size:14px;padding:4px 6px;border-radius:4px}
+.mp-btn:hover{color:var(--text);background:var(--bg2)}
+.mp-btn.active{color:#4ade80}
+.mini-player-video{width:100%;aspect-ratio:16/9;background:#000;display:none}
+.mini-player-video.open{display:block}
+.mini-player-mode{font-size:10px;color:var(--text3);padding:4px 12px;border-bottom:0.5px solid var(--border)}
+.mini-player-queue{font-size:11px;color:var(--text3);padding:6px 12px}
+
 .tools-panel{background:var(--bg2);border-radius:var(--radius-lg);border:0.5px solid var(--border);padding:1.25rem;margin:1rem 0;display:none}
 .tools-panel.open{display:block}
 .tools-title{font-size:14px;font-weight:500;margin-bottom:12px}
@@ -111,28 +126,38 @@ textarea{resize:vertical;min-height:64px}
       <button class="theme-btn" id="themeBtn">🌙 ダーク</button>
     </div>
   </header>
-
   <div class="tools-panel" id="toolsPanel">
     <div class="tools-title">データ管理</div>
     <div class="tools-row">
       <button class="tool-action-btn" onclick="importFromLocal()">📤 ローカルデータを移行</button>
       <button class="tool-action-btn" onclick="exportData()">📥 JSONエクスポート</button>
     </div>
-    <div class="tool-note">
-      <span class="status-dot"></span>データはSupabaseクラウドに保存されています。どのデバイスからでも同じデータが見えます。
-    </div>
+    <div class="tool-note"><span class="status-dot"></span>データはSupabaseクラウドに保存されています。</div>
   </div>
-
   <div class="decade-tabs" id="tabs"></div>
   <div id="mainContent"></div>
 </div>
 
-<div class="modal-overlay" id="modal">
-  <div class="modal-inner">
-    <button class="modal-close" id="modalClose">✕</button>
-    <iframe id="videoFrame" width="100%" height="100%" frameborder="0"
-      allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
+<!-- ミニプレイヤー -->
+<div class="mini-player" id="miniPlayer">
+  <div class="mini-player-mode" id="mpMode"></div>
+  <div class="mini-player-header">
+    <div class="mini-player-info">
+      <div class="mini-player-title" id="mpTitle">—</div>
+      <div class="mini-player-artist" id="mpArtist"></div>
+    </div>
+    <div class="mini-player-controls">
+      <button class="mp-btn" onclick="mpPrev()" title="前へ">⏮</button>
+      <button class="mp-btn" onclick="mpToggleVideo()" title="動画表示" id="mpVideoBtn">▶</button>
+      <button class="mp-btn" onclick="mpNext()" title="次へ">⏭</button>
+      <button class="mp-btn" onclick="mpClose()" title="閉じる">✕</button>
+    </div>
   </div>
+  <div class="mini-player-video" id="mpVideoWrap">
+    <iframe id="mpFrame" width="100%" height="100%" frameborder="0"
+      allow="autoplay; encrypted-media; fullscreen" allowfullscreen style="display:block;width:100%;aspect-ratio:16/9"></iframe>
+  </div>
+  <div class="mini-player-queue" id="mpQueue"></div>
 </div>
 
 <script>
@@ -150,29 +175,29 @@ let toolsOpen = false;
 let songs = {};
 DECADES.forEach(d => songs[d] = []);
 
+// プレイヤー状態
+let playlist = [];
+let playIdx = 0;
+let playMode = '';
+let videoVisible = false;
+let playDropOpen = false;
+
 try {
   const s = JSON.parse(localStorage.getItem(LOCAL_KEY) || '{}');
   if(s._dark){ dark = true; document.documentElement.setAttribute('data-theme','dark'); }
 } catch(e){}
 
 function saveDark(){
-  try {
-    const s = JSON.parse(localStorage.getItem(LOCAL_KEY) || '{}');
-    s._dark = dark;
-    localStorage.setItem(LOCAL_KEY, JSON.stringify(s));
-  } catch(e){}
+  try { const s = JSON.parse(localStorage.getItem(LOCAL_KEY)||'{}'); s._dark=dark; localStorage.setItem(LOCAL_KEY,JSON.stringify(s)); } catch(e){}
 }
 
 function ytId(url){
   const m = (url||'').match(/(?:youtu\.be\/|[?&]v=|embed\/)([A-Za-z0-9_-]{11})/);
   return m ? m[1] : null;
 }
-
 function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
-function decadeOptions(sel){
-  return DECADES.map(d=>`<option value="${d}"${d===sel?' selected':''}>${d}</option>`).join('');
-}
+function decadeOptions(sel){ return DECADES.map(d=>`<option value="${d}"${d===sel?' selected':''}>${d}</option>`).join(''); }
+function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]; } return a; }
 
 async function loadSongs(){
   document.getElementById('mainContent').innerHTML = '<div class="loading">読み込み中...</div>';
@@ -180,30 +205,84 @@ async function loadSongs(){
   if(error){ console.error(error); return; }
   DECADES.forEach(d => songs[d] = []);
   (data||[]).forEach(s => { if(songs[s.decade]) songs[s.decade].push(s); });
-  renderTabs();
+  renderTabs(); renderMain();
+}
+
+// --- 再生 ---
+function startPlay(mode){
+  playDropOpen = false;
+  playMode = mode;
+  let list = [];
+  if(mode === 'order'){
+    list = songs[active].filter(s=>ytId(s.url));
+  } else if(mode === 'shuffle'){
+    list = shuffle(songs[active].filter(s=>ytId(s.url)));
+  } else if(mode === 'all'){
+    DECADES.forEach(d => list.push(...songs[d].filter(s=>ytId(s.url))));
+    list = shuffle(list);
+  }
+  if(list.length===0){ alert('再生できる曲（YouTube URL付き）がありません'); return; }
+  playlist = list;
+  playIdx = 0;
+  playCurrent();
   renderMain();
 }
 
-async function addSong(song){
-  const maxRank = songs[song.decade].length;
-  const { data, error } = await sb.from('songs').insert([{...song, rank_order: maxRank}]).select();
-  if(error){ alert('保存に失敗しました: ' + error.message); return false; }
-  songs[song.decade].push(data[0]);
-  return true;
+function playCurrent(){
+  const s = playlist[playIdx];
+  if(!s) return;
+  const id = ytId(s.url);
+  document.getElementById('mpTitle').textContent = s.title;
+  document.getElementById('mpArtist').textContent = s.artist + (s.year ? ' · ' + s.year : '');
+  document.getElementById('mpMode').textContent =
+    playMode==='order' ? `▶ ${active} 順番再生` :
+    playMode==='shuffle' ? `🔀 ${active} シャッフル` : '🔀 全年代シャッフル';
+  document.getElementById('mpQueue').textContent = `${playIdx+1} / ${playlist.length}曲`;
+  if(videoVisible){
+    document.getElementById('mpFrame').src = `https://www.youtube.com/embed/${id}?autoplay=1`;
+  }
+  document.getElementById('miniPlayer').classList.add('open');
+  renderMain();
 }
 
-async function updateSong(id, song){
-  const { error } = await sb.from('songs').update(song).eq('id', id);
-  if(error){ alert('更新に失敗しました: ' + error.message); return false; }
-  return true;
+function mpNext(){
+  if(playlist.length===0) return;
+  playIdx = (playIdx+1) % playlist.length;
+  playCurrent();
+}
+function mpPrev(){
+  if(playlist.length===0) return;
+  playIdx = (playIdx-1+playlist.length) % playlist.length;
+  playCurrent();
+}
+function mpToggleVideo(){
+  videoVisible = !videoVisible;
+  const wrap = document.getElementById('mpVideoWrap');
+  const btn = document.getElementById('mpVideoBtn');
+  wrap.classList.toggle('open', videoVisible);
+  btn.classList.toggle('active', videoVisible);
+  if(videoVisible && playlist[playIdx]){
+    const id = ytId(playlist[playIdx].url);
+    document.getElementById('mpFrame').src = `https://www.youtube.com/embed/${id}?autoplay=1`;
+  } else {
+    document.getElementById('mpFrame').src = '';
+  }
+}
+function mpClose(){
+  playlist=[]; playIdx=0; playMode='';
+  document.getElementById('miniPlayer').classList.remove('open');
+  document.getElementById('mpFrame').src='';
+  videoVisible=false;
+  document.getElementById('mpVideoWrap').classList.remove('open');
+  renderMain();
 }
 
-async function deleteSong(id){
-  const { error } = await sb.from('songs').delete().eq('id', id);
-  if(error){ alert('削除に失敗しました: ' + error.message); return false; }
-  return true;
+function togglePlayDropdown(){
+  playDropOpen = !playDropOpen;
+  renderMain();
 }
 
+// --- レンダリング ---
 function renderTabs(){
   document.getElementById('tabs').innerHTML = DECADES.map(d=>
     `<button class="tab${d===active?' active':''}" onclick="setDec('${d}')">${d}<span class="tab-count">${songs[d].length||''}</span></button>`
@@ -215,6 +294,7 @@ function renderMain(){
   const canAdd = list.length < 100;
   const isEdit = editId !== null;
   const ed = isEdit ? list.find(s=>s.id===editId) : null;
+  const hasPlayable = list.some(s=>ytId(s.url));
 
   const formHtml = `
   <div class="form-panel${formOpen?' open':''}" id="addForm">
@@ -237,10 +317,23 @@ function renderMain(){
     ? `<div class="empty-state">まだ曲が登録されていません<br>「+ 曲を追加」から始めましょう</div>`
     : `<div class="song-list" id="songList">${list.map(songCard).join('')}</div>`;
 
+  const playBtn = hasPlayable ? `
+  <div style="position:relative">
+    <button class="play-menu-btn" onclick="togglePlayDropdown()">▶ 再生 ▾</button>
+    <div class="play-dropdown${playDropOpen?' open':''}">
+      <button class="play-option" onclick="startPlay('order')">▶ 順番に再生（${active}）</button>
+      <button class="play-option" onclick="startPlay('shuffle')">🔀 シャッフル（${active}）</button>
+      <button class="play-option" onclick="startPlay('all')">🌐 全年代シャッフル</button>
+    </div>
+  </div>` : '';
+
   document.getElementById('mainContent').innerHTML = `
   <div class="section-header">
     <div class="section-title">${active}<span class="section-count">${list.length} / 100</span></div>
-    ${canAdd?`<button class="add-btn" onclick="openAdd()">+ 曲を追加</button>`:'<span style="font-size:13px;color:var(--text3)">100曲達成！</span>'}
+    <div class="section-actions">
+      ${playBtn}
+      ${canAdd?`<button class="add-btn" onclick="openAdd()">+ 曲を追加</button>`:'<span style="font-size:13px;color:var(--text3)">100曲達成！</span>'}
+    </div>
   </div>
   ${formHtml}${listHtml}`;
 
@@ -249,6 +342,7 @@ function renderMain(){
 
 function songCard(s){
   const id = ytId(s.url);
+  const isPlaying = playlist.length>0 && playlist[playIdx] && playlist[playIdx].id===s.id;
   const thumb = id
     ? `<img class="song-thumb" src="https://img.youtube.com/vi/${id}/mqdefault.jpg" alt="" onerror="this.style.display='none'">`
     : `<div class="song-thumb-placeholder">♪</div>`;
@@ -258,12 +352,12 @@ function songCard(s){
     <button class="comment-toggle" onclick="toggleComment(${s.id})">▼ コメントを見る</button>
   ` : '';
   return `
-  <div class="song-card" draggable="true" data-id="${s.id}">
+  <div class="song-card${isPlaying?' playing':''}" draggable="true" data-id="${s.id}">
     <div class="drag-handle">⠿</div>
     <div class="rank">${songs[active].indexOf(s)+1}</div>
     ${thumb}
     <div class="song-info">
-      <div class="song-title">${esc(s.title)}</div>
+      <div class="song-title">${isPlaying?'♪ ':''}${esc(s.title)}</div>
       <div class="song-meta">
         <span class="song-artist">${esc(s.artist)}</span>
         ${s.year?`<span class="song-year">${esc(s.year)}</span>`:''}
@@ -271,27 +365,38 @@ function songCard(s){
       ${commentHtml}
     </div>
     <div class="song-actions">
-      ${id?`<button class="icon-btn" onclick="play('${id}')" title="再生">▶</button>`:''}
+      ${id?`<button class="icon-btn${isPlaying?' play-active':''}" onclick="playOne(${s.id})" title="再生">▶</button>`:''}
       <button class="icon-btn" onclick="editSong(${s.id})" title="編集">✎</button>
       <button class="icon-btn" onclick="delSong(${s.id})" title="削除">✕</button>
     </div>
   </div>`;
 }
 
+// 1曲だけ再生
+function playOne(id){
+  const s = songs[active].find(x=>x.id===id);
+  if(!s) return;
+  playlist = [s];
+  playIdx = 0;
+  playMode = 'single';
+  playCurrent();
+  if(!videoVisible) mpToggleVideo();
+}
+
 function toggleComment(id){
-  const cmt = document.getElementById('cmt-' + id);
-  const btn = cmt.nextElementSibling;
-  if(!cmt) return;
+  const cmt = document.getElementById('cmt-'+id);
+  const btn = cmt ? cmt.nextElementSibling : null;
+  if(!cmt||!btn) return;
   const expanded = cmt.classList.toggle('expanded');
   btn.textContent = expanded ? '▲ 閉じる' : '▼ コメントを見る';
 }
 
-function setDec(d){ active=d; formOpen=false; editId=null; renderTabs(); renderMain(); }
-function openAdd(){ formOpen=true; editId=null; renderMain(); }
+function setDec(d){ active=d; formOpen=false; editId=null; playDropOpen=false; renderTabs(); renderMain(); }
+function openAdd(){ formOpen=true; editId=null; playDropOpen=false; renderMain(); }
 function cancelForm(){ formOpen=false; editId=null; renderMain(); }
 
 function editSong(id){
-  editId=id; formOpen=true; renderMain();
+  editId=id; formOpen=true; playDropOpen=false; renderMain();
   document.getElementById('addForm').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
@@ -303,101 +408,72 @@ async function saveSong(){
   const url = document.getElementById('fUrl').value.trim();
   const comment = document.getElementById('fComment').value.trim();
   if(!artist||!title){ alert('アーティスト名と曲名は必須です'); return; }
-
   const btn = document.querySelector('.btn-save');
-  btn.textContent = '保存中...'; btn.disabled = true;
-
-  const songData = {artist, title, decade, year: year||null, url: url||null, comment: comment||null};
-
-  if(editId !== null){
+  btn.textContent='保存中...'; btn.disabled=true;
+  const songData = {artist, title, decade, year:year||null, url:url||null, comment:comment||null};
+  if(editId!==null){
     const oldSong = songs[active].find(s=>s.id===editId);
-    const ok = await updateSong(editId, songData);
-    if(ok){
-      if(decade !== active){
-        songs[active] = songs[active].filter(s=>s.id!==editId);
-        songs[decade].push({...oldSong, ...songData});
-      } else {
-        const idx = songs[active].findIndex(s=>s.id===editId);
-        songs[active][idx] = {...oldSong, ...songData};
-      }
-      active = decade;
+    const {error} = await sb.from('songs').update(songData).eq('id',editId);
+    if(!error){
+      if(decade!==active){ songs[active]=songs[active].filter(s=>s.id!==editId); songs[decade].push({...oldSong,...songData}); }
+      else { const idx=songs[active].findIndex(s=>s.id===editId); songs[active][idx]={...oldSong,...songData}; }
+      active=decade;
     }
   } else {
-    const ok = await addSong(songData);
-    if(ok) active = decade;
+    const maxRank = songs[decade].length;
+    const {data,error} = await sb.from('songs').insert([{...songData,rank_order:maxRank}]).select();
+    if(!error){ songs[decade].push(data[0]); active=decade; }
   }
-
-  formOpen=false; editId=null;
-  renderTabs(); renderMain();
+  formOpen=false; editId=null; renderTabs(); renderMain();
 }
 
 async function delSong(id){
   if(!confirm('この曲を削除しますか？')) return;
-  const ok = await deleteSong(id);
-  if(ok){
-    songs[active] = songs[active].filter(s=>s.id!==id);
-    renderTabs(); renderMain();
-  }
+  const {error} = await sb.from('songs').delete().eq('id',id);
+  if(!error){ songs[active]=songs[active].filter(s=>s.id!==id); renderTabs(); renderMain(); }
 }
-
-function play(id){
-  document.getElementById('videoFrame').src=`https://www.youtube.com/embed/${id}?autoplay=1`;
-  document.getElementById('modal').classList.add('open');
-}
-
-document.getElementById('modalClose').onclick=function(){
-  document.getElementById('modal').classList.remove('open');
-  document.getElementById('videoFrame').src='';
-};
-document.getElementById('modal').onclick=function(e){
-  if(e.target===this){ this.classList.remove('open'); document.getElementById('videoFrame').src=''; }
-};
 
 document.getElementById('themeBtn').onclick=function(){
-  dark=!dark;
-  document.documentElement.setAttribute('data-theme',dark?'dark':'');
-  this.textContent=dark?'☀️ ライト':'🌙 ダーク';
-  saveDark();
+  dark=!dark; document.documentElement.setAttribute('data-theme',dark?'dark':'');
+  this.textContent=dark?'☀️ ライト':'🌙 ダーク'; saveDark();
 };
 if(dark) document.getElementById('themeBtn').textContent='☀️ ライト';
 
-function toggleTools(){
-  toolsOpen=!toolsOpen;
-  document.getElementById('toolsPanel').classList.toggle('open',toolsOpen);
-}
+function toggleTools(){ toolsOpen=!toolsOpen; document.getElementById('toolsPanel').classList.toggle('open',toolsOpen); }
+
+// ドロップダウン外クリックで閉じる
+document.addEventListener('click', e=>{
+  if(playDropOpen && !e.target.closest('.play-menu-btn') && !e.target.closest('.play-dropdown')){
+    playDropOpen=false; renderMain();
+  }
+});
 
 async function importFromLocal(){
-  const raw = localStorage.getItem(LOCAL_KEY);
+  const raw=localStorage.getItem(LOCAL_KEY);
   if(!raw){ alert('移行するローカルデータがありません'); return; }
-  const local = JSON.parse(raw);
-  let count = 0;
+  const local=JSON.parse(raw); let count=0;
   for(const d of DECADES){
     if(!local[d]||!Array.isArray(local[d])) continue;
-    for(let i=0; i<local[d].length; i++){
-      const s = local[d][i];
+    for(let i=0;i<local[d].length;i++){
+      const s=local[d][i];
       if(!s.artist||!s.title) continue;
-      const exists = songs[d].some(x=>x.artist===s.artist&&x.title===s.title);
+      const exists=songs[d].some(x=>x.artist===s.artist&&x.title===s.title);
       if(exists) continue;
-      const { error } = await sb.from('songs').insert([{
-        decade: d, rank_order: songs[d].length + i,
-        artist: s.artist, title: s.title,
-        year: s.year||null, url: s.url||null, comment: s.comment||null
-      }]);
+      const {error}=await sb.from('songs').insert([{decade:d,rank_order:songs[d].length+i,artist:s.artist,title:s.title,year:s.year||null,url:s.url||null,comment:s.comment||null}]);
       if(!error) count++;
     }
   }
-  alert(`${count}曲を移行しました！`);
-  await loadSongs();
+  alert(`${count}曲を移行しました！`); await loadSongs();
 }
 
 function exportData(){
-  const exportObj = {};
-  DECADES.forEach(d => { if(songs[d].length>0) exportObj[d]=songs[d]; });
-  const total = DECADES.reduce((n,d)=>n+songs[d].length,0);
+  const exportObj={};
+  DECADES.forEach(d=>{ if(songs[d].length>0) exportObj[d]=songs[d]; });
+  const total=DECADES.reduce((n,d)=>n+songs[d].length,0);
   if(total===0){ alert('エクスポートするデータがありません'); return; }
-  const blob = new Blob([JSON.stringify(exportObj,null,2)],{type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  const blob=new Blob([JSON.stringify(exportObj,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
   a.href=url; a.download=`remember-me-${new Date().toISOString().slice(0,10)}.json`;
   a.click(); URL.revokeObjectURL(url);
 }
@@ -407,28 +483,21 @@ function initDrag(){
   const list=document.getElementById('songList');
   if(!list) return;
   list.querySelectorAll('.song-card').forEach(card=>{
-    card.addEventListener('dragstart',e=>{
-      dragSrc=card.dataset.id;
-      setTimeout(()=>card.classList.add('dragging'),0);
-      e.dataTransfer.effectAllowed='move';
-    });
+    card.addEventListener('dragstart',e=>{ dragSrc=card.dataset.id; setTimeout(()=>card.classList.add('dragging'),0); e.dataTransfer.effectAllowed='move'; });
     card.addEventListener('dragend',()=>card.classList.remove('dragging'));
     card.addEventListener('dragover',e=>{ e.preventDefault(); card.classList.add('drag-over'); });
     card.addEventListener('dragleave',()=>card.classList.remove('drag-over'));
     card.addEventListener('drop',async e=>{
       e.preventDefault(); card.classList.remove('drag-over');
-      const targetId = card.dataset.id;
+      const targetId=card.dataset.id;
       if(!dragSrc||dragSrc===targetId) return;
-      const arr = songs[active];
-      const fromIdx = arr.findIndex(s=>String(s.id)===dragSrc);
-      const toIdx = arr.findIndex(s=>String(s.id)===targetId);
+      const arr=songs[active];
+      const fromIdx=arr.findIndex(s=>String(s.id)===dragSrc);
+      const toIdx=arr.findIndex(s=>String(s.id)===targetId);
       if(fromIdx===-1||toIdx===-1) return;
-      const [moved] = arr.splice(fromIdx,1);
-      arr.splice(toIdx,0,moved);
+      const [moved]=arr.splice(fromIdx,1); arr.splice(toIdx,0,moved);
       renderMain();
-      for(let i=0;i<arr.length;i++){
-        await sb.from('songs').update({rank_order:i}).eq('id',arr[i].id);
-      }
+      for(let i=0;i<arr.length;i++) await sb.from('songs').update({rank_order:i}).eq('id',arr[i].id);
     });
   });
 }
