@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>REMEMBER ME</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -68,6 +69,7 @@ textarea{resize:vertical;min-height:64px}
 .icon-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;padding:5px 7px;border-radius:6px}
 .icon-btn:hover{color:var(--text);background:var(--bg2)}
 .empty-state{text-align:center;padding:4rem 1rem;color:var(--text3);font-size:14px;line-height:2}
+.loading{text-align:center;padding:3rem;color:var(--text3);font-size:14px}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);display:none;align-items:center;justify-content:center;z-index:200}
 .modal-overlay.open{display:flex}
 .modal-inner{background:#000;border-radius:var(--radius-lg);overflow:hidden;width:min(640px,92vw);aspect-ratio:16/9;position:relative}
@@ -79,8 +81,8 @@ textarea{resize:vertical;min-height:64px}
 .tools-row{display:flex;gap:8px;flex-wrap:wrap}
 .tool-action-btn{padding:8px 16px;border-radius:var(--radius);border:0.5px solid var(--border2);font-size:13px;color:var(--text);cursor:pointer;background:var(--bg)}
 .tool-action-btn:hover{background:var(--bg3)}
-.tool-action-btn.danger{color:#e05555;border-color:rgba(224,85,85,0.3)}
 .tool-note{font-size:12px;color:var(--text3);margin-top:10px;line-height:1.6}
+.status-dot{width:6px;height:6px;border-radius:50%;background:#4ade80;display:inline-block;margin-right:4px}
 @media(max-width:560px){.header-actions{position:static;transform:none;display:flex;justify-content:center;margin-top:10px}.site-header{padding-bottom:1rem}}
 @media(max-width:480px){.form-grid{grid-template-columns:1fr}.song-thumb,.song-thumb-placeholder{width:56px;height:42px}}
 </style>
@@ -99,13 +101,12 @@ textarea{resize:vertical;min-height:64px}
   <div class="tools-panel" id="toolsPanel">
     <div class="tools-title">データ管理</div>
     <div class="tools-row">
+      <button class="tool-action-btn" onclick="importFromLocal()">📤 ローカルデータを移行</button>
       <button class="tool-action-btn" onclick="exportData()">📥 JSONエクスポート</button>
-      <button class="tool-action-btn" onclick="document.getElementById('importFile').click()">📤 JSONインポート</button>
-      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
     </div>
     <div class="tool-note">
-      エクスポート：全曲データをJSONファイルとして保存します。バックアップや別デバイスへの移行に使えます。<br>
-      インポート：エクスポートしたJSONファイルを読み込みます。既存のデータに追加されます。
+      <span class="status-dot"></span>データはSupabaseクラウドに保存されています。どのデバイスからでも同じデータが見えます。<br>
+      ローカルデータを移行：このブラウザのlocalStorageに保存されたデータをSupabaseに移行します。
     </div>
   </div>
 
@@ -122,23 +123,33 @@ textarea{resize:vertical;min-height:64px}
 </div>
 
 <script>
+const SUPABASE_URL = 'https://zpwcwtxnxvztqdxxgusp.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Dr8P0VV9Xd4hEEWJqbdrEw_zXBJDYp1';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 const DECADES = ['1950s','1960s','1970s','1980s','1990s','2000s','2010s','2020s'];
-const KEY = 'rememberme_v2';
+const LOCAL_KEY = 'rememberme_v2';
 let active = '1980s';
 let formOpen = false;
-let editIdx = null;
+let editId = null;
 let dark = false;
 let toolsOpen = false;
-let data = {};
-DECADES.forEach(d => data[d] = []);
+let songs = {};
+DECADES.forEach(d => songs[d] = []);
 
+// テーマ
 try {
-  const s = JSON.parse(localStorage.getItem(KEY) || '{}');
-  DECADES.forEach(d => { if(s[d]) data[d] = s[d]; });
+  const s = JSON.parse(localStorage.getItem(LOCAL_KEY) || '{}');
   if(s._dark){ dark = true; document.documentElement.setAttribute('data-theme','dark'); }
 } catch(e){}
 
-function persist(){ try{ localStorage.setItem(KEY, JSON.stringify({...data, _dark:dark})); }catch(e){} }
+function saveDark(){
+  try {
+    const s = JSON.parse(localStorage.getItem(LOCAL_KEY) || '{}');
+    s._dark = dark;
+    localStorage.setItem(LOCAL_KEY, JSON.stringify(s));
+  } catch(e){}
+}
 
 function ytId(url){
   const m = (url||'').match(/(?:youtu\.be\/|[?&]v=|embed\/)([A-Za-z0-9_-]{11})/);
@@ -151,70 +162,53 @@ function decadeOptions(sel){
   return DECADES.map(d=>`<option value="${d}"${d===sel?' selected':''}>${d}</option>`).join('');
 }
 
-// エクスポート
-function exportData(){
-  const exportObj = {};
-  DECADES.forEach(d => { if(data[d] && data[d].length > 0) exportObj[d] = data[d]; });
-  const total = DECADES.reduce((n,d)=>n+(data[d]||[]).length,0);
-  if(total === 0){ alert('エクスポートするデータがありません'); return; }
-  const blob = new Blob([JSON.stringify(exportObj, null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `remember-me-${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
+// Supabaseからデータ読み込み
+async function loadSongs(){
+  document.getElementById('mainContent').innerHTML = '<div class="loading">読み込み中...</div>';
+  const { data, error } = await sb.from('songs').select('*').order('rank_order');
+  if(error){ console.error(error); return; }
+  DECADES.forEach(d => songs[d] = []);
+  (data||[]).forEach(s => {
+    if(songs[s.decade]) songs[s.decade].push(s);
+  });
+  renderTabs();
+  renderMain();
 }
 
-// インポート
-function importData(e){
-  const file = e.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = function(ev){
-    try {
-      const imported = JSON.parse(ev.target.result);
-      let count = 0;
-      DECADES.forEach(d => {
-        if(imported[d] && Array.isArray(imported[d])){
-          imported[d].forEach(song => {
-            if(song.artist && song.title){
-              if(!data[d]) data[d] = [];
-              // 重複チェック（同じアーティスト+曲名は追加しない）
-              const exists = data[d].some(s => s.artist===song.artist && s.title===song.title);
-              if(!exists){ data[d].push(song); count++; }
-            }
-          });
-        }
-      });
-      persist();
-      renderTabs();
-      renderMain();
-      alert(`${count}曲をインポートしました`);
-    } catch(err){
-      alert('JSONファイルの読み込みに失敗しました');
-    }
-    e.target.value = '';
-  };
-  reader.readAsText(file);
+// 曲を追加
+async function addSong(song){
+  const maxRank = songs[song.decade].length;
+  const { data, error } = await sb.from('songs').insert([{...song, rank_order: maxRank}]).select();
+  if(error){ alert('保存に失敗しました: ' + error.message); return false; }
+  songs[song.decade].push(data[0]);
+  return true;
 }
 
-function toggleTools(){
-  toolsOpen = !toolsOpen;
-  document.getElementById('toolsPanel').classList.toggle('open', toolsOpen);
+// 曲を更新
+async function updateSong(id, song){
+  const { error } = await sb.from('songs').update(song).eq('id', id);
+  if(error){ alert('更新に失敗しました: ' + error.message); return false; }
+  return true;
+}
+
+// 曲を削除
+async function deleteSong(id){
+  const { error } = await sb.from('songs').delete().eq('id', id);
+  if(error){ alert('削除に失敗しました: ' + error.message); return false; }
+  return true;
 }
 
 function renderTabs(){
   document.getElementById('tabs').innerHTML = DECADES.map(d=>
-    `<button class="tab${d===active?' active':''}" onclick="setDec('${d}')">${d}<span class="tab-count">${data[d].length||''}</span></button>`
+    `<button class="tab${d===active?' active':''}" onclick="setDec('${d}')">${d}<span class="tab-count">${songs[d].length||''}</span></button>`
   ).join('');
 }
 
 function renderMain(){
-  const songs = data[active];
-  const canAdd = songs.length < 100;
-  const isEdit = editIdx !== null;
-  const ed = isEdit ? songs[editIdx] : null;
+  const list = songs[active];
+  const canAdd = list.length < 100;
+  const isEdit = editId !== null;
+  const ed = isEdit ? list.find(s=>s.id===editId) : null;
 
   const formHtml = `
   <div class="form-panel${formOpen?' open':''}" id="addForm">
@@ -225,7 +219,7 @@ function renderMain(){
       <div><label class="form-label">年代 *</label><select id="fDecade">${decadeOptions(isEdit?(ed.decade||active):active)}</select></div>
       <div><label class="form-label">リリース年<span class="form-optional">任意</span></label><input id="fYear" placeholder="1956" maxlength="4" value="${isEdit&&ed.year?ed.year:''}" /></div>
       <div class="form-full"><label class="form-label">YouTube URL<span class="form-optional">任意</span></label><input id="fUrl" placeholder="https://www.youtube.com/watch?v=..." value="${isEdit?esc(ed.url||''):''}" /></div>
-      <div class="form-full"><label class="form-label">コメント<span class="form-optional">任意</span></label><textarea id="fComment" placeholder="どんな時に聴いてた？どこで知った？...">${isEdit?esc(ed.comment):''}</textarea></div>
+      <div class="form-full"><label class="form-label">コメント<span class="form-optional">任意</span></label><textarea id="fComment" placeholder="どんな時に聴いてた？どこで知った？...">${isEdit?esc(ed.comment||''):''}</textarea></div>
     </div>
     <div class="form-actions">
       <button class="btn-cancel" onclick="cancelForm()">キャンセル</button>
@@ -233,13 +227,13 @@ function renderMain(){
     </div>
   </div>`;
 
-  const listHtml = songs.length===0
+  const listHtml = list.length===0
     ? `<div class="empty-state">まだ曲が登録されていません<br>「+ 曲を追加」から始めましょう</div>`
-    : `<div class="song-list" id="songList">${songs.map(songCard).join('')}</div>`;
+    : `<div class="song-list" id="songList">${list.map(songCard).join('')}</div>`;
 
   document.getElementById('mainContent').innerHTML = `
   <div class="section-header">
-    <div class="section-title">${active}<span class="section-count">${songs.length} / 100</span></div>
+    <div class="section-title">${active}<span class="section-count">${list.length} / 100</span></div>
     ${canAdd?`<button class="add-btn" onclick="openAdd()">+ 曲を追加</button>`:'<span style="font-size:13px;color:var(--text3)">100曲達成！</span>'}
   </div>
   ${formHtml}${listHtml}`;
@@ -247,15 +241,15 @@ function renderMain(){
   initDrag();
 }
 
-function songCard(s,i){
+function songCard(s){
   const id = ytId(s.url);
   const thumb = id
     ? `<img class="song-thumb" src="https://img.youtube.com/vi/${id}/mqdefault.jpg" alt="" onerror="this.style.display='none'">`
     : `<div class="song-thumb-placeholder">♪</div>`;
   return `
-  <div class="song-card" draggable="true" data-idx="${i}">
+  <div class="song-card" draggable="true" data-id="${s.id}">
     <div class="drag-handle">⠿</div>
-    <div class="rank">${i+1}</div>
+    <div class="rank">${songs[active].indexOf(s)+1}</div>
     ${thumb}
     <div class="song-info">
       <div class="song-title">${esc(s.title)}</div>
@@ -267,22 +261,22 @@ function songCard(s,i){
     </div>
     <div class="song-actions">
       ${id?`<button class="icon-btn" onclick="play('${id}')" title="再生">▶</button>`:''}
-      <button class="icon-btn" onclick="editSong(${i})" title="編集">✎</button>
-      <button class="icon-btn" onclick="del(${i})" title="削除">✕</button>
+      <button class="icon-btn" onclick="editSong(${s.id})" title="編集">✎</button>
+      <button class="icon-btn" onclick="delSong(${s.id})" title="削除">✕</button>
     </div>
   </div>`;
 }
 
-function setDec(d){ active=d; formOpen=false; editIdx=null; renderTabs(); renderMain(); }
-function openAdd(){ formOpen=true; editIdx=null; renderMain(); }
-function cancelForm(){ formOpen=false; editIdx=null; renderMain(); }
+function setDec(d){ active=d; formOpen=false; editId=null; renderTabs(); renderMain(); }
+function openAdd(){ formOpen=true; editId=null; renderMain(); }
+function cancelForm(){ formOpen=false; editId=null; renderMain(); }
 
-function editSong(i){
-  editIdx=i; formOpen=true; renderMain();
+function editSong(id){
+  editId=id; formOpen=true; renderMain();
   document.getElementById('addForm').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
-function saveSong(){
+async function saveSong(){
   const artist = document.getElementById('fArtist').value.trim();
   const title = document.getElementById('fTitle').value.trim();
   const decade = document.getElementById('fDecade').value;
@@ -290,26 +284,41 @@ function saveSong(){
   const url = document.getElementById('fUrl').value.trim();
   const comment = document.getElementById('fComment').value.trim();
   if(!artist||!title){ alert('アーティスト名と曲名は必須です'); return; }
-  const song = {url, artist, title, decade, year, comment};
-  if(editIdx!==null){
-    if(decade !== active){
-      data[active].splice(editIdx,1);
-      data[decade].push(song);
-    } else {
-      data[active][editIdx]=song;
+
+  const btn = document.querySelector('.btn-save');
+  btn.textContent = '保存中...'; btn.disabled = true;
+
+  const songData = {artist, title, decade, year: year||null, url: url||null, comment: comment||null};
+
+  if(editId !== null){
+    const oldSong = songs[active].find(s=>s.id===editId);
+    const ok = await updateSong(editId, songData);
+    if(ok){
+      if(decade !== active){
+        songs[active] = songs[active].filter(s=>s.id!==editId);
+        songs[decade].push({...oldSong, ...songData});
+      } else {
+        const idx = songs[active].findIndex(s=>s.id===editId);
+        songs[active][idx] = {...oldSong, ...songData};
+      }
+      active = decade;
     }
   } else {
-    data[decade].push(song);
+    const ok = await addSong(songData);
+    if(ok) active = decade;
   }
-  persist(); formOpen=false; editIdx=null;
-  active=decade;
+
+  formOpen=false; editId=null;
   renderTabs(); renderMain();
 }
 
-function del(i){
+async function delSong(id){
   if(!confirm('この曲を削除しますか？')) return;
-  data[active].splice(i,1);
-  persist(); renderTabs(); renderMain();
+  const ok = await deleteSong(id);
+  if(ok){
+    songs[active] = songs[active].filter(s=>s.id!==id);
+    renderTabs(); renderMain();
+  }
 }
 
 function play(id){
@@ -324,36 +333,92 @@ document.getElementById('modalClose').onclick=function(){
 document.getElementById('modal').onclick=function(e){
   if(e.target===this){ this.classList.remove('open'); document.getElementById('videoFrame').src=''; }
 };
+
 document.getElementById('themeBtn').onclick=function(){
   dark=!dark;
   document.documentElement.setAttribute('data-theme',dark?'dark':'');
   this.textContent=dark?'☀️ ライト':'🌙 ダーク';
-  persist();
+  saveDark();
 };
 if(dark) document.getElementById('themeBtn').textContent='☀️ ライト';
 
+function toggleTools(){
+  toolsOpen=!toolsOpen;
+  document.getElementById('toolsPanel').classList.toggle('open',toolsOpen);
+}
+
+// localStorageからSupabaseへ移行
+async function importFromLocal(){
+  const raw = localStorage.getItem(LOCAL_KEY);
+  if(!raw){ alert('移行するローカルデータがありません'); return; }
+  const local = JSON.parse(raw);
+  let count = 0;
+  for(const d of DECADES){
+    if(!local[d]||!Array.isArray(local[d])) continue;
+    for(let i=0; i<local[d].length; i++){
+      const s = local[d][i];
+      if(!s.artist||!s.title) continue;
+      const exists = songs[d].some(x=>x.artist===s.artist&&x.title===s.title);
+      if(exists) continue;
+      const { error } = await sb.from('songs').insert([{
+        decade: d, rank_order: songs[d].length + i,
+        artist: s.artist, title: s.title,
+        year: s.year||null, url: s.url||null, comment: s.comment||null
+      }]);
+      if(!error) count++;
+    }
+  }
+  alert(`${count}曲を移行しました！`);
+  await loadSongs();
+}
+
+// エクスポート
+function exportData(){
+  const exportObj = {};
+  DECADES.forEach(d => { if(songs[d].length>0) exportObj[d]=songs[d]; });
+  const total = DECADES.reduce((n,d)=>n+songs[d].length,0);
+  if(total===0){ alert('エクスポートするデータがありません'); return; }
+  const blob = new Blob([JSON.stringify(exportObj,null,2)],{type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=`remember-me-${new Date().toISOString().slice(0,10)}.json`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// ドラッグ＆ドロップ
 let dragSrc=null;
 function initDrag(){
   const list=document.getElementById('songList');
   if(!list) return;
   list.querySelectorAll('.song-card').forEach(card=>{
-    card.addEventListener('dragstart',e=>{ dragSrc=+card.dataset.idx; setTimeout(()=>card.classList.add('dragging'),0); e.dataTransfer.effectAllowed='move'; });
+    card.addEventListener('dragstart',e=>{
+      dragSrc=card.dataset.id;
+      setTimeout(()=>card.classList.add('dragging'),0);
+      e.dataTransfer.effectAllowed='move';
+    });
     card.addEventListener('dragend',()=>card.classList.remove('dragging'));
     card.addEventListener('dragover',e=>{ e.preventDefault(); card.classList.add('drag-over'); });
     card.addEventListener('dragleave',()=>card.classList.remove('drag-over'));
-    card.addEventListener('drop',e=>{
+    card.addEventListener('drop',async e=>{
       e.preventDefault(); card.classList.remove('drag-over');
-      const target=+card.dataset.idx;
-      if(dragSrc===null||dragSrc===target) return;
-      const [m]=data[active].splice(dragSrc,1);
-      data[active].splice(target,0,m);
-      persist(); renderMain();
+      const targetId = card.dataset.id;
+      if(!dragSrc||dragSrc===targetId) return;
+      const arr = songs[active];
+      const fromIdx = arr.findIndex(s=>String(s.id)===dragSrc);
+      const toIdx = arr.findIndex(s=>String(s.id)===targetId);
+      if(fromIdx===-1||toIdx===-1) return;
+      const [moved] = arr.splice(fromIdx,1);
+      arr.splice(toIdx,0,moved);
+      renderMain();
+      // rank_orderを更新
+      for(let i=0;i<arr.length;i++){
+        await sb.from('songs').update({rank_order:i}).eq('id',arr[i].id);
+      }
     });
   });
 }
 
-renderTabs();
-renderMain();
+loadSongs();
 </script>
 </body>
 </html>
