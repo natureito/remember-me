@@ -91,20 +91,20 @@ textarea{resize:vertical;min-height:64px}
 .loading{text-align:center;padding:3rem;color:var(--text3);font-size:14px}
 
 /* ミニプレイヤー */
-.mini-player{position:fixed;bottom:16px;right:16px;width:320px;background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--radius-lg);box-shadow:0 8px 32px rgba(0,0,0,0.2);z-index:100;display:none;overflow:hidden}
+.mini-player{position:fixed;bottom:16px;right:16px;width:300px;background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--radius-lg);box-shadow:0 8px 32px rgba(0,0,0,0.2);z-index:100;display:none;overflow:hidden}
 .mini-player.open{display:block}
-.mini-player-header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:0.5px solid var(--border)}
+.mini-player-mode{font-size:10px;color:var(--text3);padding:5px 12px;border-bottom:0.5px solid var(--border);background:var(--bg2)}
+.mini-player-header{display:flex;align-items:center;gap:8px;padding:10px 12px}
 .mini-player-info{flex:1;min-width:0}
 .mini-player-title{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mini-player-artist{font-size:11px;color:var(--text2);margin-top:1px}
-.mini-player-controls{display:flex;gap:4px;align-items:center;flex-shrink:0;margin-left:8px}
-.mp-btn{background:none;border:none;cursor:pointer;color:var(--text2);font-size:14px;padding:4px 6px;border-radius:4px}
+.mini-player-controls{display:flex;gap:2px;align-items:center;flex-shrink:0}
+.mp-btn{background:none;border:none;cursor:pointer;color:var(--text2);font-size:15px;padding:4px 6px;border-radius:4px;line-height:1}
 .mp-btn:hover{color:var(--text);background:var(--bg2)}
 .mp-btn.active{color:#4ade80}
-.mini-player-video{width:100%;aspect-ratio:16/9;background:#000;display:none}
+.mini-player-video{width:100%;background:#000;display:none}
 .mini-player-video.open{display:block}
-.mini-player-mode{font-size:10px;color:var(--text3);padding:4px 12px;border-bottom:0.5px solid var(--border)}
-.mini-player-queue{font-size:11px;color:var(--text3);padding:6px 12px}
+.mini-player-queue{font-size:11px;color:var(--text3);padding:5px 12px;border-top:0.5px solid var(--border);text-align:right}
 
 .tools-panel{background:var(--bg2);border-radius:var(--radius-lg);border:0.5px solid var(--border);padding:1.25rem;margin:1rem 0;display:none}
 .tools-panel.open{display:block}
@@ -117,6 +117,14 @@ textarea{resize:vertical;min-height:64px}
 </style>
 </head>
 <body>
+
+<!-- YouTube IFrame API -->
+<script>
+  var tag = document.createElement('script');
+  tag.src = "https://www.youtube.com/iframe_api";
+  document.head.appendChild(tag);
+</script>
+
 <div class="container">
   <header class="site-header">
     <div class="site-title">REMEMBER ME</div>
@@ -148,14 +156,13 @@ textarea{resize:vertical;min-height:64px}
     </div>
     <div class="mini-player-controls">
       <button class="mp-btn" onclick="mpPrev()" title="前へ">⏮</button>
-      <button class="mp-btn" onclick="mpToggleVideo()" title="動画表示" id="mpVideoBtn">▶</button>
+      <button class="mp-btn" onclick="mpToggleVideo()" id="mpVideoBtn" title="動画">▶</button>
       <button class="mp-btn" onclick="mpNext()" title="次へ">⏭</button>
       <button class="mp-btn" onclick="mpClose()" title="閉じる">✕</button>
     </div>
   </div>
   <div class="mini-player-video" id="mpVideoWrap">
-    <iframe id="mpFrame" width="100%" height="100%" frameborder="0"
-      allow="autoplay; encrypted-media; fullscreen" allowfullscreen style="display:block;width:100%;aspect-ratio:16/9"></iframe>
+    <div id="ytPlayer"></div>
   </div>
   <div class="mini-player-queue" id="mpQueue"></div>
 </div>
@@ -181,6 +188,8 @@ let playIdx = 0;
 let playMode = '';
 let videoVisible = false;
 let playDropOpen = false;
+let ytPlayer = null;
+let ytReady = false;
 
 try {
   const s = JSON.parse(localStorage.getItem(LOCAL_KEY) || '{}');
@@ -189,6 +198,24 @@ try {
 
 function saveDark(){
   try { const s = JSON.parse(localStorage.getItem(LOCAL_KEY)||'{}'); s._dark=dark; localStorage.setItem(LOCAL_KEY,JSON.stringify(s)); } catch(e){}
+}
+
+// YouTube IFrame API準備完了コールバック
+function onYouTubeIframeAPIReady(){
+  ytReady = true;
+  ytPlayer = new YT.Player('ytPlayer', {
+    width: '100%',
+    height: '169',
+    playerVars: { autoplay: 1, rel: 0, modestbranding: 1 },
+    events: {
+      onStateChange: function(e){
+        // 再生終了(0)で次の曲へ
+        if(e.data === YT.PlayerState.ENDED){
+          mpNext();
+        }
+      }
+    }
+  });
 }
 
 function ytId(url){
@@ -224,6 +251,11 @@ function startPlay(mode){
   if(list.length===0){ alert('再生できる曲（YouTube URL付き）がありません'); return; }
   playlist = list;
   playIdx = 0;
+  // 動画を自動表示
+  videoVisible = true;
+  document.getElementById('mpVideoWrap').classList.add('open');
+  document.getElementById('mpVideoBtn').classList.add('active');
+  document.getElementById('miniPlayer').classList.add('open');
   playCurrent();
   renderMain();
 }
@@ -236,12 +268,13 @@ function playCurrent(){
   document.getElementById('mpArtist').textContent = s.artist + (s.year ? ' · ' + s.year : '');
   document.getElementById('mpMode').textContent =
     playMode==='order' ? `▶ ${active} 順番再生` :
-    playMode==='shuffle' ? `🔀 ${active} シャッフル` : '🔀 全年代シャッフル';
-  document.getElementById('mpQueue').textContent = `${playIdx+1} / ${playlist.length}曲`;
-  if(videoVisible){
-    document.getElementById('mpFrame').src = `https://www.youtube.com/embed/${id}?autoplay=1`;
+    playMode==='shuffle' ? `🔀 ${active} シャッフル` :
+    playMode==='single' ? '▶ 1曲再生' : '🌐 全年代シャッフル';
+  document.getElementById('mpQueue').textContent = playlist.length > 1 ? `${playIdx+1} / ${playlist.length}曲` : '';
+
+  if(videoVisible && ytPlayer && ytReady && id){
+    try { ytPlayer.loadVideoById(id); } catch(e){}
   }
-  document.getElementById('miniPlayer').classList.add('open');
   renderMain();
 }
 
@@ -261,25 +294,35 @@ function mpToggleVideo(){
   const btn = document.getElementById('mpVideoBtn');
   wrap.classList.toggle('open', videoVisible);
   btn.classList.toggle('active', videoVisible);
-  if(videoVisible && playlist[playIdx]){
+  if(videoVisible && playlist[playIdx] && ytPlayer && ytReady){
     const id = ytId(playlist[playIdx].url);
-    document.getElementById('mpFrame').src = `https://www.youtube.com/embed/${id}?autoplay=1`;
-  } else {
-    document.getElementById('mpFrame').src = '';
+    if(id) try { ytPlayer.loadVideoById(id); } catch(e){}
+  } else if(!videoVisible && ytPlayer && ytReady){
+    try { ytPlayer.pauseVideo(); } catch(e){}
   }
 }
 function mpClose(){
   playlist=[]; playIdx=0; playMode='';
   document.getElementById('miniPlayer').classList.remove('open');
-  document.getElementById('mpFrame').src='';
-  videoVisible=false;
   document.getElementById('mpVideoWrap').classList.remove('open');
+  document.getElementById('mpVideoBtn').classList.remove('active');
+  videoVisible=false;
+  if(ytPlayer && ytReady) try { ytPlayer.stopVideo(); } catch(e){}
   renderMain();
 }
 
-function togglePlayDropdown(){
-  playDropOpen = !playDropOpen;
-  renderMain();
+function togglePlayDropdown(){ playDropOpen=!playDropOpen; renderMain(); }
+
+// 1曲再生
+function playOne(id){
+  const s = songs[active].find(x=>x.id===id);
+  if(!s) return;
+  playlist=[s]; playIdx=0; playMode='single';
+  videoVisible=true;
+  document.getElementById('mpVideoWrap').classList.add('open');
+  document.getElementById('mpVideoBtn').classList.add('active');
+  document.getElementById('miniPlayer').classList.add('open');
+  playCurrent();
 }
 
 // --- レンダリング ---
@@ -372,17 +415,6 @@ function songCard(s){
   </div>`;
 }
 
-// 1曲だけ再生
-function playOne(id){
-  const s = songs[active].find(x=>x.id===id);
-  if(!s) return;
-  playlist = [s];
-  playIdx = 0;
-  playMode = 'single';
-  playCurrent();
-  if(!videoVisible) mpToggleVideo();
-}
-
 function toggleComment(id){
   const cmt = document.getElementById('cmt-'+id);
   const btn = cmt ? cmt.nextElementSibling : null;
@@ -441,7 +473,6 @@ if(dark) document.getElementById('themeBtn').textContent='☀️ ライト';
 
 function toggleTools(){ toolsOpen=!toolsOpen; document.getElementById('toolsPanel').classList.toggle('open',toolsOpen); }
 
-// ドロップダウン外クリックで閉じる
 document.addEventListener('click', e=>{
   if(playDropOpen && !e.target.closest('.play-menu-btn') && !e.target.closest('.play-dropdown')){
     playDropOpen=false; renderMain();
