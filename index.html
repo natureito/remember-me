@@ -100,9 +100,11 @@ textarea{resize:vertical;min-height:64px}
 @media(max-width:600px){.swipe-hint{display:block}}
 
 /* ミニプレイヤー */
-.mini-player{position:fixed;bottom:16px;right:16px;width:300px;background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--radius-lg);box-shadow:0 8px 32px rgba(0,0,0,0.2);z-index:100;display:none;overflow:hidden}
+.mini-player{position:fixed;bottom:16px;right:16px;width:300px;background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--radius-lg);box-shadow:0 8px 32px rgba(0,0,0,0.2);z-index:100;display:none;overflow:hidden;user-select:none}
 .mini-player.open{display:block}
-.mini-player-mode{font-size:10px;color:var(--text3);padding:5px 12px;border-bottom:0.5px solid var(--border);background:var(--bg2)}
+.mini-player-mode{font-size:10px;color:var(--text3);padding:5px 12px;border-bottom:0.5px solid var(--border);background:var(--bg2);display:flex;align-items:center;justify-content:space-between}
+.mp-drag-handle{font-size:12px;color:var(--text3);cursor:grab;padding:0 4px;flex-shrink:0}
+.mp-drag-handle:active{cursor:grabbing}
 .mini-player-header{display:flex;align-items:center;gap:8px;padding:10px 12px}
 .mini-player-info{flex:1;min-width:0}
 .mini-player-title{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -161,7 +163,7 @@ textarea{resize:vertical;min-height:64px}
 
 <!-- ミニプレイヤー -->
 <div class="mini-player" id="miniPlayer">
-  <div class="mini-player-mode" id="mpMode"></div>
+  <div class="mini-player-mode" id="mpMode"><span id="mpModeText"></span><span class="mp-drag-handle" id="mpDragHandle">⠿ ドラッグ</span></div>
   <div class="mini-player-header">
     <div class="mini-player-info">
       <div class="mini-player-title" id="mpTitle">—</div>
@@ -286,7 +288,7 @@ function playCurrent(){
   const id = ytId(s.url);
   document.getElementById('mpTitle').textContent = s.title;
   document.getElementById('mpArtist').textContent = s.artist + (s.year?' · '+s.year:'');
-  document.getElementById('mpMode').textContent =
+  document.getElementById('mpModeText').textContent =
     playMode==='order'?`▶ ${active} 順番再生`:
     playMode==='shuffle'?`🔀 ${active} シャッフル`:
     playMode==='single'?'▶ 1曲再生':'🌐 全年代シャッフル';
@@ -592,6 +594,53 @@ function exportData(){
 }
 
 loadSongs();
+
+// --- ミニプレイヤー ドラッグ移動 ---
+(function(){
+  const mp = document.getElementById('miniPlayer');
+  const handle = document.getElementById('mpDragHandle');
+  let isDragging = false, startX, startY, origLeft, origTop;
+
+  function getPos(){
+    const rect = mp.getBoundingClientRect();
+    return { left: rect.left, top: rect.top };
+  }
+
+  function startDrag(x, y){
+    isDragging = true;
+    const pos = getPos();
+    startX = x; startY = y;
+    origLeft = pos.left; origTop = pos.top;
+    mp.style.right = 'auto';
+    mp.style.bottom = 'auto';
+    mp.style.left = origLeft + 'px';
+    mp.style.top = origTop + 'px';
+    mp.style.transition = 'none';
+  }
+
+  function moveDrag(x, y){
+    if(!isDragging) return;
+    const dx = x - startX, dy = y - startY;
+    let newLeft = origLeft + dx, newTop = origTop + dy;
+    // 画面外に出ないよう制限
+    newLeft = Math.max(0, Math.min(window.innerWidth - mp.offsetWidth, newLeft));
+    newTop = Math.max(0, Math.min(window.innerHeight - mp.offsetHeight, newTop));
+    mp.style.left = newLeft + 'px';
+    mp.style.top = newTop + 'px';
+  }
+
+  function endDrag(){ isDragging = false; }
+
+  // PC
+  handle.addEventListener('mousedown', e=>{ startDrag(e.clientX, e.clientY); e.preventDefault(); });
+  document.addEventListener('mousemove', e=>{ if(isDragging) moveDrag(e.clientX, e.clientY); });
+  document.addEventListener('mouseup', endDrag);
+
+  // スマホ
+  handle.addEventListener('touchstart', e=>{ startDrag(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); },{passive:false});
+  document.addEventListener('touchmove', e=>{ if(isDragging){ moveDrag(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); } },{passive:false});
+  document.addEventListener('touchend', endDrag);
+})();
 </script>
 </body>
 </html>
