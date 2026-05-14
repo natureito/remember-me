@@ -19,19 +19,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .theme-btn:hover,.tool-btn:hover{background:var(--bg2)}
 .decade-tabs{display:flex;gap:6px;padding:1.25rem 0 0;overflow-x:auto;scrollbar-width:none}
 .decade-tabs::-webkit-scrollbar{display:none}
-.tab{flex-shrink:0;padding:6px 16px;border-radius:var(--radius);border:0.5px solid var(--border);font-size:13px;color:var(--text2);cursor:pointer;background:transparent;transition:all 0.15s}
+.tab{flex-shrink:0;padding:6px 16px;border-radius:var(--radius);border:0.5px solid var(--border);font-size:13px;color:var(--text2);cursor:pointer;background:transparent;transition:all 0.15s;font-weight:500}
 .tab:hover{background:var(--bg2)}
 .tab.active{background:var(--text);color:var(--bg);border-color:var(--text)}
 .tab-count{font-size:11px;opacity:0.6;margin-left:4px}
 .swipe-area{overflow:hidden;position:relative}
 .swipe-inner{transition:transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94);will-change:transform}
 
-/* タグタブ */
-.tag-tabs{display:flex;gap:6px;padding:6px 0 0;overflow-x:auto;scrollbar-width:none;min-height:0}
-.tag-tabs::-webkit-scrollbar{display:none}
-.tag-tab{flex-shrink:0;padding:4px 12px;border-radius:20px;border:0.5px solid var(--border);font-size:12px;color:var(--text2);cursor:pointer;background:transparent;transition:all 0.15s}
-.tag-tab:hover{background:var(--bg2)}
-.tag-tab.active{background:#6e8efb;color:#fff;border-color:#6e8efb}
+/* タグタブ（サブ） */
+.tag-tabs-wrap{padding:6px 0 0;display:none}
+.tag-tabs-wrap.has-tags{display:block}
+.tag-tabs-label{font-size:10px;color:var(--text3);letter-spacing:0.05em;margin-bottom:5px}
+.tag-tabs{display:flex;flex-wrap:wrap;gap:5px}
+.tag-tab{padding:3px 10px;border-radius:20px;border:0.5px solid var(--border);font-size:11px;color:var(--text3);cursor:pointer;background:transparent;transition:all 0.15s}
+.tag-tab:hover{background:var(--bg2);color:var(--text2)}
+.tag-tab.active{background:#6e8efb22;color:#6e8efb;border-color:#6e8efb}
 .section-header{display:flex;align-items:center;justify-content:space-between;padding:1.5rem 0 0.75rem}
 .section-title{font-size:20px;font-weight:500}
 .section-count{font-size:13px;font-weight:400;color:var(--text3);margin-left:8px}
@@ -212,7 +214,10 @@ textarea{resize:vertical;min-height:64px}
   </div>
 
   <div class="decade-tabs" id="tabs"></div>
-  <div class="tag-tabs" id="tagTabs"></div>
+  <div class="tag-tabs-wrap" id="tagTabsWrap">
+    <div class="tag-tabs-label">タグで絞り込む</div>
+    <div class="tag-tabs" id="tagTabs"></div>
+  </div>
   <div class="swipe-hint">← スワイプで年代を切り替え →</div>
   <div class="swipe-area" id="swipeArea">
     <div class="swipe-inner" id="swipeInner">
@@ -277,7 +282,9 @@ async function loadTags(){
 
 function renderTagTabs(){
   const el=document.getElementById('tagTabs');
-  if(activeTags.length===0){el.innerHTML='';return;}
+  const wrap=document.getElementById('tagTabsWrap');
+  if(activeTags.length===0){el.innerHTML='';wrap.classList.remove('has-tags');return;}
+  wrap.classList.add('has-tags');
   el.innerHTML=activeTags.map(t=>
     `<button class="tag-tab${activeTagFilter===t.id?' active':''}" onclick="selectTagFilter(${t.id})">🏷 ${esc(t.name)}</button>`
   ).join('');
