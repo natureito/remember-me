@@ -23,7 +23,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .tab:hover{background:var(--bg2)}
 .tab.active{background:var(--text);color:var(--bg);border-color:var(--text)}
 .tab-count{font-size:11px;opacity:0.6;margin-left:4px}
-.swipe-area{touch-action:pan-y;overflow:hidden}
+.swipe-area{overflow:hidden;position:relative}
+.swipe-inner{transition:transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94);will-change:transform}
 .section-header{display:flex;align-items:center;justify-content:space-between;padding:1.5rem 0 0.75rem}
 .section-title{font-size:20px;font-weight:500}
 .section-count{font-size:13px;font-weight:400;color:var(--text3);margin-left:8px}
@@ -185,7 +186,7 @@ textarea{resize:vertical;min-height:64px}
   <div class="search-results" id="searchResults"></div>
 
   <div class="tools-panel" id="toolsPanel">
-    <div class="tools-title">データ管理</div>
+    <div class="tools-title" style="display:flex;align-items:center;justify-content:space-between">データ管理<button onclick="toggleTools()" style="background:none;border:none;font-size:16px;color:var(--text3);cursor:pointer;padding:0">✕</button></div>
     <div class="tools-row">
       <button class="tool-action-btn" onclick="importFromLocal()">📤 ローカルデータを移行</button>
       <button class="tool-action-btn" onclick="exportData()">📥 JSONエクスポート</button>
@@ -206,7 +207,9 @@ textarea{resize:vertical;min-height:64px}
   <div class="decade-tabs" id="tabs"></div>
   <div class="swipe-hint">← スワイプで年代を切り替え →</div>
   <div class="swipe-area" id="swipeArea">
-    <div id="mainContent"></div>
+    <div class="swipe-inner" id="swipeInner">
+      <div id="mainContent"></div>
+    </div>
   </div>
 </div>
 
@@ -288,17 +291,21 @@ function renderTagSettings(){
       </div>
     </div>`;
   });
-  // カスタムタグ
+  // カスタムタグ（編集・削除ボタン付き）
   const custom=allTags.filter(t=>!t.is_preset);
   if(custom.length>0){
     html+=`<div class="tag-category">
       <div class="tag-category-label">オリジナル</div>
-      <div class="tag-checkbox-grid">
+      <div style="display:flex;flex-direction:column;gap:6px">
         ${custom.map(t=>`
-          <label class="tag-checkbox-item">
-            <input type="checkbox" ${t.is_active?'checked':''} onchange="toggleTagActive(${t.id},this.checked)" />
-            ${esc(t.name)}
-          </label>`).join('')}
+          <div style="display:flex;align-items:center;gap:8px">
+            <label class="tag-checkbox-item" style="flex:1">
+              <input type="checkbox" ${t.is_active?'checked':''} onchange="toggleTagActive(${t.id},this.checked)" />
+              <span id="tag-label-${t.id}">${esc(t.name)}</span>
+            </label>
+            <button onclick="editCustomTag(${t.id})" style="padding:2px 8px;font-size:11px;border:0.5px solid var(--border2);border-radius:4px;background:none;color:var(--text2);cursor:pointer">✎</button>
+            <button onclick="deleteCustomTag(${t.id})" style="padding:2px 8px;font-size:11px;border:0.5px solid var(--border2);border-radius:4px;background:none;color:#e05555;cursor:pointer">✕</button>
+          </div>`).join('')}
       </div>
     </div>`;
   }
@@ -323,6 +330,28 @@ async function addCustomTag(){
     activeTags=allTags.filter(t=>t.is_active);
     renderTagSettings();
     input.value='';
+  }
+}
+
+async function editCustomTag(id){
+  const t=allTags.find(x=>x.id===id); if(!t) return;
+  const newName=prompt('タグ名を編集してください',t.name);
+  if(!newName||newName===t.name) return;
+  if(allTags.some(x=>x.name===newName&&x.id!==id)){alert('同じ名前のタグが既にあります');return;}
+  const {error}=await sb.from('tags').update({name:newName}).eq('id',id);
+  if(!error){ t.name=newName; activeTags=allTags.filter(x=>x.is_active); renderTagSettings(); }
+}
+
+async function deleteCustomTag(id){
+  const t=allTags.find(x=>x.id===id); if(!t) return;
+  if(!confirm(`「${t.name}」を削除しますか？\n曲に付けたこのタグも全て外れます。`)) return;
+  const {error}=await sb.from('tags').delete().eq('id',id);
+  if(!error){
+    allTags=allTags.filter(x=>x.id!==id);
+    activeTags=allTags.filter(x=>x.is_active);
+    // songTagMapからも削除
+    Object.keys(songTagMap).forEach(sid=>{ songTagMap[sid]=songTagMap[sid].filter(x=>x.id!==id); });
+    renderTagSettings();
   }
 }
 
@@ -405,19 +434,53 @@ function playOne(id){
   playCurrent();
 }
 
-// --- スワイプ ---
-let swipeStartX=0,swipeStartY=0,swipeActive=false;
+// --- スワイプ（スライドアニメーション付き） ---
+let swipeStartX=0,swipeStartY=0,swipeActive=false,swipeLocked=false;
 const swipeArea=document.getElementById('swipeArea');
-swipeArea.addEventListener('touchstart',e=>{swipeStartX=e.touches[0].clientX;swipeStartY=e.touches[0].clientY;swipeActive=true;},{passive:true});
+const swipeInner=document.getElementById('swipeInner');
+
+swipeArea.addEventListener('touchstart',e=>{
+  swipeStartX=e.touches[0].clientX;
+  swipeStartY=e.touches[0].clientY;
+  swipeActive=true;swipeLocked=false;
+  swipeInner.style.transition='none';
+},{passive:true});
+
+swipeArea.addEventListener('touchmove',e=>{
+  if(!swipeActive)return;
+  const dx=e.touches[0].clientX-swipeStartX;
+  const dy=e.touches[0].clientY-swipeStartY;
+  if(!swipeLocked){
+    if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>8){swipeLocked=true;}
+    else if(Math.abs(dy)>Math.abs(dx)&&Math.abs(dy)>8){swipeActive=false;return;}
+  }
+  if(swipeLocked){
+    const idx=DECADES.indexOf(active);
+    const limitedDx=(idx===0&&dx>0)||(idx===DECADES.length-1&&dx<0)?dx*0.2:dx;
+    swipeInner.style.transform=`translateX(${limitedDx}px)`;
+  }
+},{passive:true});
+
 swipeArea.addEventListener('touchend',e=>{
   if(!swipeActive)return;
-  const dx=e.changedTouches[0].clientX-swipeStartX,dy=e.changedTouches[0].clientY-swipeStartY;
-  if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>50){
+  const dx=e.changedTouches[0].clientX-swipeStartX;
+  swipeInner.style.transition='transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)';
+  if(swipeLocked&&Math.abs(dx)>60){
+    const w=swipeArea.offsetWidth;
     const idx=DECADES.indexOf(active);
-    if(dx<0&&idx<DECADES.length-1)setDec(DECADES[idx+1]);
-    else if(dx>0&&idx>0)setDec(DECADES[idx-1]);
+    if(dx<0&&idx<DECADES.length-1){
+      swipeInner.style.transform=`translateX(-${w}px)`;
+      setTimeout(()=>{ swipeInner.style.transition='none';swipeInner.style.transform='translateX(100%)';setDec(DECADES[idx+1]);setTimeout(()=>{swipeInner.style.transition='transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)';swipeInner.style.transform='translateX(0)';},10); },280);
+    } else if(dx>0&&idx>0){
+      swipeInner.style.transform=`translateX(${w}px)`;
+      setTimeout(()=>{ swipeInner.style.transition='none';swipeInner.style.transform='translateX(-100%)';setDec(DECADES[idx-1]);setTimeout(()=>{swipeInner.style.transition='transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)';swipeInner.style.transform='translateX(0)';},10); },280);
+    } else {
+      swipeInner.style.transform='translateX(0)';
+    }
+  } else {
+    swipeInner.style.transform='translateX(0)';
   }
-  swipeActive=false;
+  swipeActive=false;swipeLocked=false;
 },{passive:true});
 
 function scrollTabIntoView(){
