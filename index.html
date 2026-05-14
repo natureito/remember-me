@@ -25,6 +25,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .tab-count{font-size:11px;opacity:0.6;margin-left:4px}
 .swipe-area{overflow:hidden;position:relative}
 .swipe-inner{transition:transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94);will-change:transform}
+
+/* タグタブ */
+.tag-tabs{display:flex;gap:6px;padding:6px 0 0;overflow-x:auto;scrollbar-width:none;min-height:0}
+.tag-tabs::-webkit-scrollbar{display:none}
+.tag-tab{flex-shrink:0;padding:4px 12px;border-radius:20px;border:0.5px solid var(--border);font-size:12px;color:var(--text2);cursor:pointer;background:transparent;transition:all 0.15s}
+.tag-tab:hover{background:var(--bg2)}
+.tag-tab.active{background:#6e8efb;color:#fff;border-color:#6e8efb}
 .section-header{display:flex;align-items:center;justify-content:space-between;padding:1.5rem 0 0.75rem}
 .section-title{font-size:20px;font-weight:500}
 .section-count{font-size:13px;font-weight:400;color:var(--text3);margin-left:8px}
@@ -205,6 +212,7 @@ textarea{resize:vertical;min-height:64px}
   </div>
 
   <div class="decade-tabs" id="tabs"></div>
+  <div class="tag-tabs" id="tagTabs"></div>
   <div class="swipe-hint">← スワイプで年代を切り替え →</div>
   <div class="swipe-area" id="swipeArea">
     <div class="swipe-inner" id="swipeInner">
@@ -240,6 +248,7 @@ const DECADES = ['1950s','1960s','1970s','1980s','1990s','2000s','2010s','2020s'
 const LOCAL_KEY = 'rememberme_v2';
 let active='1980s', formOpen=false, editId=null, dark=false, toolsOpen=false, searchOpen=false;
 let songs={}, allTags=[], activeTags=[], songTagMap={};
+let activeTagFilter=null; // 選択中のタグID（nullなら年代表示）
 DECADES.forEach(d=>songs[d]=[]);
 let playlist=[],playIdx=0,playMode='',videoVisible=false,playDropOpen=false;
 let ytPlayer=null,ytReady=false;
@@ -263,6 +272,27 @@ async function loadTags(){
   allTags=data||[];
   activeTags=allTags.filter(t=>t.is_active);
   renderTagSettings();
+  renderTagTabs();
+}
+
+function renderTagTabs(){
+  const el=document.getElementById('tagTabs');
+  if(activeTags.length===0){el.innerHTML='';return;}
+  el.innerHTML=activeTags.map(t=>
+    `<button class="tag-tab${activeTagFilter===t.id?' active':''}" onclick="selectTagFilter(${t.id})">🏷 ${esc(t.name)}</button>`
+  ).join('');
+}
+
+function selectTagFilter(tagId){
+  if(activeTagFilter===tagId){
+    // 同じタグをクリックで解除
+    activeTagFilter=null;
+  } else {
+    activeTagFilter=tagId;
+    formOpen=false;editId=null;
+  }
+  renderTagTabs();
+  renderMain();
 }
 
 async function loadSongTags(){
@@ -312,11 +342,13 @@ function renderTagSettings(){
   el.innerHTML=html||'タグがありません';
 }
 
-async function toggleTagActive(id,active){
-  await sb.from('tags').update({is_active:active}).eq('id',id);
+async function toggleTagActive(id,isActive){
+  await sb.from('tags').update({is_active:isActive}).eq('id',id);
   const t=allTags.find(x=>x.id===id);
-  if(t) t.is_active=active;
+  if(t) t.is_active=isActive;
   activeTags=allTags.filter(t=>t.is_active);
+  if(activeTagFilter&&!activeTags.some(t=>t.id===activeTagFilter)) activeTagFilter=null;
+  renderTagTabs();
 }
 
 async function addCustomTag(){
@@ -349,9 +381,10 @@ async function deleteCustomTag(id){
   if(!error){
     allTags=allTags.filter(x=>x.id!==id);
     activeTags=allTags.filter(x=>x.is_active);
-    // songTagMapからも削除
+    if(activeTagFilter===id) activeTagFilter=null;
     Object.keys(songTagMap).forEach(sid=>{ songTagMap[sid]=songTagMap[sid].filter(x=>x.id!==id); });
     renderTagSettings();
+    renderTagTabs();
   }
 }
 
@@ -425,6 +458,15 @@ function mpClose(){
   renderMain();
 }
 function togglePlayDropdown(){playDropOpen=!playDropOpen;renderMain();}
+function playTagSong(id,decade){
+  const s=songs[decade]&&songs[decade].find(x=>x.id===id);if(!s)return;
+  playlist=[s];playIdx=0;playMode='single';videoVisible=true;
+  document.getElementById('mpVideoWrap').classList.add('open');
+  document.getElementById('mpVideoBtn').classList.add('active');
+  document.getElementById('miniPlayer').classList.add('open');
+  playCurrent();
+}
+
 function playOne(id){
   const s=songs[active].find(x=>x.id===id);if(!s)return;
   playlist=[s];playIdx=0;playMode='single';videoVisible=true;
@@ -440,6 +482,7 @@ const swipeArea=document.getElementById('swipeArea');
 const swipeInner=document.getElementById('swipeInner');
 
 swipeArea.addEventListener('touchstart',e=>{
+  if(activeTagFilter!==null) return;
   swipeStartX=e.touches[0].clientX;
   swipeStartY=e.touches[0].clientY;
   swipeActive=true;swipeLocked=false;
@@ -498,6 +541,39 @@ function renderTabs(){
 }
 
 function renderMain(){
+  // タグフィルター中の場合
+  if(activeTagFilter!==null){
+    const tag=activeTags.find(t=>t.id===activeTagFilter);
+    const taggedSongs=[];
+    DECADES.forEach(d=>songs[d].forEach(s=>{
+      if((songTagMap[s.id]||[]).some(t=>t.id===activeTagFilter)) taggedSongs.push({...s,_decade:d});
+    }));
+    const hasPlayable=taggedSongs.some(s=>ytId(s.url));
+    const listHtml=taggedSongs.length===0
+      ?`<div class="empty-state">このタグが付いた曲はまだありません</div>`
+      :`<div class="song-list">${taggedSongs.map(s=>{
+          const id=ytId(s.url);
+          const isPlaying=playlist.length>0&&playlist[playIdx]&&playlist[playIdx].id===s.id;
+          const thumb=id?`<img class="song-thumb" src="https://img.youtube.com/vi/${id}/mqdefault.jpg" alt="" onerror="this.style.display='none'">`:`<div class="song-thumb-placeholder">♪</div>`;
+          return `<div class="song-card${isPlaying?' playing':''}" data-id="${s.id}">
+            <div class="rank" style="padding-top:3px">${esc(s._decade)}</div>
+            ${thumb}
+            <div class="song-info">
+              <div class="song-title">${isPlaying?'♪ ':''}${esc(s.title)}</div>
+              <div class="song-meta"><span class="song-artist">${esc(s.artist)}</span>${s.year?`<span class="song-year">${esc(s.year)}</span>`:''}</div>
+            </div>
+            <div class="song-actions">${id?`<button class="icon-btn${isPlaying?' play-active':''}" onclick="playTagSong(${s.id},'${s._decade}')" title="再生">▶</button>`:''}</div>
+          </div>`;
+        }).join('')}</div>`;
+    document.getElementById('mainContent').innerHTML=`
+    <div class="section-header">
+      <div class="section-title">🏷 ${esc(tag?tag.name:'')}<span class="section-count">${taggedSongs.length}曲</span></div>
+      ${hasPlayable?`<button class="play-menu-btn" onclick="startPlay('tag',${activeTagFilter})">🔀 シャッフル再生</button>`:''}
+    </div>
+    ${listHtml}`;
+    return;
+  }
+
   const list=songs[active],canAdd=list.length<100;
   const isEdit=editId!==null,ed=isEdit?list.find(s=>s.id===editId):null;
   const hasPlayable=list.some(s=>ytId(s.url));
@@ -603,7 +679,7 @@ function toggleComment(id){
   btn.textContent=expanded?'▲ 閉じる':'▼ コメントを見る';
 }
 
-function setDec(d){active=d;formOpen=false;editId=null;playDropOpen=false;renderTabs();renderMain();}
+function setDec(d){active=d;formOpen=false;editId=null;playDropOpen=false;activeTagFilter=null;renderTagTabs();renderTabs();renderMain();}
 function openAdd(){formOpen=true;editId=null;playDropOpen=false;formSelectedTags=[];renderMain();}
 function cancelForm(){formOpen=false;editId=null;formSelectedTags=[];renderMain();}
 
