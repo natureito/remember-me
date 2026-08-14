@@ -268,6 +268,83 @@ function onYouTubeIframeAPIReady(){
 }
 
 function ytId(url){ const m=(url||'').match(/(?:youtu\.be\/|[?&]v=|embed\/)([A-Za-z0-9_-]{11})/); return m?m[1]:null; }
+  async function fetchYoutubeInfo(){
+  try{
+    const url=document.getElementById('fUrl').value.trim();
+    if(!url){
+      alert('YouTube URLを入力してください');
+      return;
+    }
+
+    const res=await fetch(
+      `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`
+    );
+
+    const data=await res.json();
+
+    let title=(data.title||'')
+      .replace(/\(Official.*?\)/gi,'')
+      .replace(/\[Official.*?\]/gi,'')
+      .replace(/\(MV\)/gi,'')
+      .replace(/\[MV\]/gi,'')
+      .trim();
+
+    let artist='';
+    let song='';
+
+    if(title.includes(' - ')){
+      [artist,song]=title.split(' - ',2);
+    }else if(title.includes('／')){
+      [artist,song]=title.split('／',2);
+    }else{
+      song=title;
+    }
+
+    if(artist){
+      document.getElementById('fArtist').value=artist.trim();
+    }
+
+    if(song){
+      document.getElementById('fTitle').value=song.trim();
+    }
+
+    // MusicBrainz
+    if(artist && song){
+      const query=`recording:${song} AND artist:${artist}`;
+
+      const mb=await fetch(
+        `https://musicbrainz.org/ws/2/recording?query=${encodeURIComponent(query)}&fmt=json&limit=1`
+      );
+
+      const mbData=await mb.json();
+
+      if(mbData.recordings?.length){
+        const rec=mbData.recordings[0];
+
+        if(rec['first-release-date']){
+          const year=parseInt(
+            rec['first-release-date'].substring(0,4)
+          );
+
+          document.getElementById('fYear').value=year;
+
+          const decade=Math.floor(year/10)*10+'s';
+
+          const decadeEl=document.getElementById('fDecade');
+
+          if([...decadeEl.options].some(o=>o.value===decade)){
+            decadeEl.value=decade;
+          }
+        }
+      }
+    }
+
+    alert('曲情報を取得しました');
+  }catch(e){
+    console.error(e);
+    alert('取得できませんでした');
+  }
+}
 function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function decadeOptions(sel){ return DECADES.map(d=>`<option value="${d}"${d===sel?' selected':''}>${d}</option>`).join(''); }
 function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
@@ -606,7 +683,29 @@ function renderMain(){
       <div><label class="form-label">曲名 *</label><input id="fTitle" placeholder="Hound Dog" value="${isEdit?esc(ed.title):''}" /></div>
       <div><label class="form-label">年代 *</label><select id="fDecade">${decadeOptions(isEdit?(ed.decade||active):active)}</select></div>
       <div><label class="form-label">リリース年<span class="form-optional">任意</span></label><input id="fYear" placeholder="1956" maxlength="4" value="${isEdit&&ed.year?ed.year:''}" /></div>
-      <div class="form-full"><label class="form-label">YouTube URL<span class="form-optional">任意</span></label><input id="fUrl" placeholder="https://www.youtube.com/watch?v=..." value="${isEdit?esc(ed.url||''):''}" /></div>
+      <div class="form-full">
+<label class="form-label">
+YouTube URL
+<span class="form-optional">任意</span>
+</label>
+
+<div style="display:flex;gap:8px">
+<input
+  id="fUrl"
+  placeholder="https://www.youtube.com/watch?v=..."
+  value="${isEdit?esc(ed.url||''):''}"
+  style="flex:1"
+/>
+
+<button
+  type="button"
+  class="btn-cancel"
+  onclick="fetchYoutubeInfo()"
+>
+  🎵情報取得
+</button>
+</div>
+</div>
       <div class="form-full"><label class="form-label">コメント<span class="form-optional">任意</span></label><textarea id="fComment" placeholder="どんな時に聴いてた？どこで知った？...">${isEdit?esc(ed.comment||''):''}</textarea></div>
       ${activeTags.length>0?`<div class="form-full"><label class="form-label">タグ<span class="form-optional">任意・複数選択可</span></label><div class="tag-select-area" id="formTagArea">${tagChips}</div></div>`:''}
     </div>
